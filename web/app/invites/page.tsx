@@ -14,8 +14,10 @@ function CarteInvite({ v }: { v: Invite }) {
   const lien = v.ig?.url || v.tk?.url || v.yt?.url || '';
   const reseaux = [v.ig, v.tk, v.yt].some(r => r && r.n);
   return (
-    <article className={'inv-c' + (v.roi ? ' roi' : '')}>
-      <div className="inv-ph">{v.photo ? <img src={v.photo} alt={v.nom} loading={v.roi ? undefined : 'lazy'} /> : <div className="vide">{ICONES.user}Photo à venir</div>}</div>
+    <article className={'inv-c' + (v.roi ? ' roi' : '') + (v.detour ? ' detoure' : '')}>
+      {v.detour
+        ? <div className="inv-ph"><img className="detoure-img" src={v.detour} alt={v.nom} /></div>
+        : <div className="inv-ph">{v.photo ? <img src={v.photo} alt={v.nom} loading="lazy" /> : <div className="vide">{ICONES.user}Photo à venir</div>}</div>}
       <div className="inv-nom"><h3>{v.nom}</h3>{lien && <a href={lien} target="_blank" rel="noopener" aria-label="Voir son compte">{ICONES.play}</a>}</div>
       <div className="inv-b"><p>{v.desc}</p>{reseaux && <div className="inv-rs"><Reseau k="ig" r={v.ig} /><Reseau k="tk" r={v.tk} /><Reseau k="yt" r={v.yt} /></div>}</div>
     </article>
