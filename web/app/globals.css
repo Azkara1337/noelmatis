@@ -564,14 +564,6 @@ footer a{color:#f3dcb5}
 .inv-c.roi .inv-ph img{position:absolute;inset:0;object-position:center 25%}
 .inv-c.roi .inv-nom{background:linear-gradient(180deg,#d8322a,#9c1712);border-color:var(--or)}
 .inv-c.roi .inv-nom h3{font-size:clamp(24px,2.8vw,32px)}
-.roi-neige{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden}
-.roi-neige span{position:absolute;top:-12px;border-radius:50%;background:#fff;box-shadow:0 0 2px rgba(60,40,20,.55),0 0 8px rgba(255,255,255,.9);opacity:.95;animation:roi-flocon linear infinite}
-@keyframes roi-flocon{0%{transform:translate(0,-12px)}50%{transform:translate(var(--derive,0),170px)}100%{transform:translate(0,560px);opacity:.2}}
-.roi-boules{position:absolute;left:0;right:0;top:0;z-index:3;pointer-events:none}
-.roi-boules span{position:absolute;top:0;margin-left:-15px;transform-origin:15px 0;animation:roi-balance 3.2s ease-in-out infinite alternate}
-.roi-boules svg{display:block;filter:drop-shadow(0 4px 5px rgba(0,0,0,.35))}
-@keyframes roi-balance{from{transform:rotate(-7deg)}to{transform:rotate(7deg)}}
-@media(prefers-reduced-motion:reduce){.roi-neige span,.roi-boules span{animation:none}.roi-neige span{top:auto;bottom:calc(var(--derive,0px) + 40%)}}
 @media(max-width:900px){.inv-g.autour{grid-template-columns:repeat(2,minmax(0,1fr))}.inv-c.roi{grid-column:1/-1;grid-row:auto}.inv-c.roi .inv-ph{flex:none;aspect-ratio:1.2/1;min-height:0}}
 @media(max-width:560px){.inv-g.autour{grid-template-columns:minmax(0,1fr)}}
 main.page{overflow-x:clip}

@@ -9,10 +9,10 @@ export type Valeurs = Record<string, string>;
  * C'est voulu : Apps Script accepte la requête sans pré-vérification CORS.
  * La réponse est opaque, donc on ne sait pas si le Sheet l'a bien reçue : on vérifie dans le Sheet.
  */
-async function envoyer(data: Valeurs): Promise<'ok' | 'maquette'> {
-  if (!ENDPOINT) return 'maquette';
+async function envoyer(data: Valeurs): Promise<void> {
+  // Sans URL du script, on n'affiche jamais de fausse confirmation : on passe en erreur.
+  if (!ENDPOINT) throw new Error('ENDPOINT vide');
   await fetch(ENDPOINT, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
-  return 'ok';
 }
 
 type Props = {
@@ -48,8 +48,8 @@ export default function Formulaire({ id, className, type, champs, requis, erreur
     if (requis.some(k => !v[k])) { setEchec(false); setManque(true); return; }
     setManque(false); setEchec(false); setEnvoi(true);
     try {
-      const r = await envoyer({ type, page: location.href, ...v });
-      setMerci(recap(v) + (r === 'maquette' ? ' (Maquette : la demande n’est pas encore envoyée.)' : ` Sans nouvelles de notre part sous 48 h, appelez le ${TELEPHONE}.`));
+      await envoyer({ type, page: location.href, ...v });
+      setMerci(recap(v) + ` Sans nouvelles de notre part sous 48 h, appelez le ${TELEPHONE}.`);
     } catch {
       setEchec(true);
     } finally {

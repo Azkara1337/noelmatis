@@ -22,7 +22,7 @@ VILLE = ''            // ville du badge des dates
 PRIX_REPAS = 20       // € TTC le repas
 TELEPHONE = '05 34 03 24 40'
 DEJA = {...}          // stands déjà pris (secours si le Sheet ne répond pas)
-ENDPOINT = ''         // URL /exec de l'Apps Script. Vide = mode maquette, rien n'est envoyé
+ENDPOINT = ''         // URL /exec de l'Apps Script. Vide = les formulaires affichent une erreur (plus de mode maquette)
 ORGANISATEUR = ''     // mentions légales : nom, statut, adresse de l'organisateur
 CONTACT_MAIL = ''     // e-mail pour les données personnelles
 PAIEMENT = '...'      // texte sous le bouton de réservation des repas

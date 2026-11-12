@@ -11,8 +11,8 @@ export const TELEPHONE = '05 34 03 24 40';
 export const TELEPHONE_LIEN = 'tel:+33534032440';
 /** Stands déjà pris : secours si le Google Sheet ne répond pas. */
 export const DEJA: Record<number, string> = { 7: 'Crêpes', 11: 'Churros', 24: 'Aligot', 25: 'Brasero', 26: 'Vin chaud', 27: 'Raclette' };
-/** URL /exec de l'Apps Script (Déployer > Application Web). Vide = mode maquette, rien n'est envoyé. */
-export const ENDPOINT = '';
+/** URL /exec de l'Apps Script (Déployer > Application Web). Obligatoire : vide = les formulaires affichent une erreur. */
+export const ENDPOINT = 'https://script.google.com/macros/s/AKfycbwIqNhelbsiRQOK6Nky4m8-Q5PDNF3ZQ7r_Bxdrncn7j0zIL1A0BnjEvm6h-2L33KDx/exec';
 /**
  * Organisateur (pages Mentions légales, Confidentialité, CGU). Un champ vide = étiquette « à compléter ».
  * nom : raison sociale ou nom de l'association · statut : ex. 'Association loi 1901', 'SAS' · capital : capital social (obligatoire pour une société, vide pour une association)
@@ -39,7 +39,7 @@ export const MAJ_LEGAL = '12 novembre 2026';
 /** Texte affiché sous le bouton des repas (à valider avec l'organisation). */
 export const PAIEMENT = 'Vous recevez la facture par e-mail, à régler par virement : la réservation est confirmée dès le paiement. Vos tickets vous sont envoyés par e-mail, ou vous les retirez à l’accueil du marché.';
 /** Adresse finale du site, pour l'image de partage (og:image). À remplacer après la mise en ligne. */
-export const SITE_URL = 'https://ADRESSE-DU-SITE';
+export const SITE_URL = 'https://www.noel-rcimmo.fr';
 
 /** Partenaires signés uniquement, avec leur vrai logo dans public/img/logos/. Les cases « Votre logo ici » se créent toutes seules. */
 export type Partenaire = { nom: string; ville?: string; logo?: string; site?: string };
@@ -49,7 +49,7 @@ export const PARTENAIRES: Partenaire[] = [
 
 /** Invités : n = nombre d'abonnés affiché, url = lien du compte. Un réseau sans n ne s'affiche pas. */
 export type Reseau = { n: string; url: string };
-export type Invite = { nom: string; desc: string; photo: string; /** Carte mise en avant au centre (neige, boules). */ roi?: boolean; ig?: Reseau; tk?: Reseau; yt?: Reseau };
+export type Invite = { nom: string; desc: string; photo: string; /** Carte mise en avant au centre (plus grande, bordure dorée). */ roi?: boolean; ig?: Reseau; tk?: Reseau; yt?: Reseau };
 export const INVITES: Invite[] = [
   { nom: 'Bertrand Vettes', desc: 'Investisseur & entrepreneur terrain · Immobilier · BTP · Projets', photo: '/img/invites/bertrand.webp', roi: true, ig: { n: '', url: '' }, yt: { n: '', url: '' } },
   { nom: 'Ludo & Clémentine', desc: 'Rénovation, auto-rénovation et vie de chantier', photo: '/img/invites/ludo-clementine.webp', ig: { n: '', url: '' }, tk: { n: '', url: '' } },

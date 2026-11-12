@@ -10,51 +10,12 @@ function Reseau({ k, r }: { k: 'ig' | 'tk' | 'yt'; r?: ReseauT }) {
   return r.url ? <a href={r.url} target="_blank" rel="noopener">{ICONES[k]}{r.n}</a> : <span>{ICONES[k]}{r.n}</span>;
 }
 
-// Neige de la carte du Roi : positions fixes (pas d'aléatoire, pour un rendu identique serveur et navigateur).
-const FLOCONS = Array.from({ length: 22 }, (_, i) => ({
-  left: (i * 37 + 7) % 100,
-  taille: 4 + (i * 5) % 6,
-  duree: 6 + (i * 7) % 6,
-  delai: -((i * 13) % 11),
-  derive: ((i % 5) - 2) * 9,
-}));
-
-// Boules de Noël suspendues en haut de la carte : position, longueur du fil, couleur.
-const BOULES = [
-  { x: 9, fil: 26, c: '#c8221b' }, { x: 24, fil: 52, c: '#e9b949' }, { x: 41, fil: 18, c: '#2e5e2a' },
-  { x: 59, fil: 44, c: '#c8221b' }, { x: 76, fil: 22, c: '#e9b949' }, { x: 91, fil: 38, c: '#2e5e2a' },
-];
-
-function DecorRoi() {
-  return (
-    <>
-      <div className="roi-neige" aria-hidden="true">
-        {FLOCONS.map((f, i) => (
-          <span key={i} style={{ left: f.left + '%', width: f.taille, height: f.taille, animationDuration: f.duree + 's', animationDelay: f.delai + 's', ['--derive' as string]: f.derive + 'px' }} />
-        ))}
-      </div>
-      <div className="roi-boules" aria-hidden="true">
-        {BOULES.map((b, i) => (
-          <span key={i} style={{ left: b.x + '%', animationDelay: -(i * 0.7) + 's' }}>
-            <svg viewBox={`0 0 30 ${b.fil + 34}`} width="30" height={b.fil + 34}>
-              <line x1="15" y1="0" x2="15" y2={b.fil} stroke="#e9b949" strokeWidth="1.5" />
-              <rect x="11" y={b.fil} width="8" height="5" rx="1" fill="#b8862a" />
-              <circle cx="15" cy={b.fil + 18} r="13" fill={b.c} stroke="#fff3" strokeWidth="1" />
-              <ellipse cx="10.5" cy={b.fil + 13} rx="3.5" ry="5" fill="#fff" opacity=".45" transform={`rotate(30 10.5 ${b.fil + 13})`} />
-            </svg>
-          </span>
-        ))}
-      </div>
-    </>
-  );
-}
-
 function CarteInvite({ v }: { v: Invite }) {
   const lien = v.ig?.url || v.tk?.url || v.yt?.url || '';
   const reseaux = [v.ig, v.tk, v.yt].some(r => r && r.n);
   return (
     <article className={'inv-c' + (v.roi ? ' roi' : '')}>
-      <div className="inv-ph">{v.photo ? <img src={v.photo} alt={v.nom} loading={v.roi ? undefined : 'lazy'} /> : <div className="vide">{ICONES.user}Photo à venir</div>}{v.roi && <DecorRoi />}</div>
+      <div className="inv-ph">{v.photo ? <img src={v.photo} alt={v.nom} loading={v.roi ? undefined : 'lazy'} /> : <div className="vide">{ICONES.user}Photo à venir</div>}</div>
       <div className="inv-nom"><h3>{v.nom}</h3>{lien && <a href={lien} target="_blank" rel="noopener" aria-label="Voir son compte">{ICONES.play}</a>}</div>
       <div className="inv-b"><p>{v.desc}</p>{reseaux && <div className="inv-rs"><Reseau k="ig" r={v.ig} /><Reseau k="tk" r={v.tk} /><Reseau k="yt" r={v.yt} /></div>}</div>
     </article>
