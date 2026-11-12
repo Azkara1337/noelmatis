@@ -49,7 +49,7 @@ export default function Formulaire({ id, className, type, champs, requis, erreur
     setManque(false); setEchec(false); setEnvoi(true);
     try {
       const r = await envoyer({ type, page: location.href, ...v });
-      setMerci(recap(v) + (r === 'maquette' ? ' (Maquette : la demande n’est pas encore envoyée.)' : ''));
+      setMerci(recap(v) + (r === 'maquette' ? ' (Maquette : la demande n’est pas encore envoyée.)' : ` Sans nouvelles de notre part sous 48 h, appelez le ${TELEPHONE}.`));
     } catch {
       setEchec(true);
     } finally {

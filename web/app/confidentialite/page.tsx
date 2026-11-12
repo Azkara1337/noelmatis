@@ -33,7 +33,7 @@ export default function Confidentialite() {
       <p>Les demandes sont supprimées au plus tard le 31 janvier 2027. Seules les factures et pièces comptables sont conservées plus longtemps, pendant la durée imposée par la loi (10 ans).</p>
 
       <h2>Cookies et mesure d'audience</h2>
-      <p>Le site ne dépose aucun cookie publicitaire et ne mesure pas l'audience. La visite 3D mémorise dans votre navigateur le dernier mode d'affichage choisi (2D ou 3D) : cette information reste sur votre appareil et ne nous est pas transmise.</p>
+      <p>Le site ne dépose aucun cookie publicitaire et ne mesure pas l'audience. La visite 3D n'enregistre rien dans votre navigateur.</p>
       <p>Pour s'afficher, le site charge des polices de caractères chez Google Fonts et la bibliothèque de la visite 3D chez jsDelivr. Ces services reçoivent votre adresse IP, comme pour tout chargement de fichier sur internet.</p>
 
       <h2>Vos droits</h2>

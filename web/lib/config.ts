@@ -15,10 +15,10 @@ export const DEJA: Record<number, string> = { 7: 'Crêpes', 11: 'Churros', 24: '
 export const ENDPOINT = '';
 /**
  * Organisateur (pages Mentions légales, Confidentialité, CGU). Un champ vide = étiquette « à compléter ».
- * nom : raison sociale ou nom de l'association · statut : ex. 'Association loi 1901', 'SAS au capital de 1 000 €'
+ * nom : raison sociale ou nom de l'association · statut : ex. 'Association loi 1901', 'SAS' · capital : capital social (obligatoire pour une société, vide pour une association)
  * immatriculation : SIRET, RCS ou n° RNA (W…) · directeur : directeur de la publication (personne physique).
  */
-export const ORGANISATEUR = { nom: 'RC IMMO', statut: 'Société par actions simplifiée (SAS)', adresse: '10 B rue Jean Rostand, 09100 Pamiers', immatriculation: 'RCS Foix 892 450 172', directeur: 'Bertrand Vettes' };
+export const ORGANISATEUR = { nom: 'RC IMMO', statut: 'Société par actions simplifiée (SAS)', capital: '', adresse: '10 B rue Jean Rostand, 09100 Pamiers', immatriculation: 'RCS Foix 892 450 172', directeur: 'Bertrand Vettes' };
 /** E-mail de contact (questions, données personnelles). */
 export const CONTACT_MAIL = '';
 /** Conditions de réservation affichées dans les CGU. Vide = « à compléter ». */
@@ -49,12 +49,11 @@ export const PARTENAIRES: Partenaire[] = [
 
 /** Invités : n = nombre d'abonnés affiché, url = lien du compte. Un réseau sans n ne s'affiche pas. */
 export type Reseau = { n: string; url: string };
-export type Invite = { nom: string; desc: string; photo: string; ig?: Reseau; tk?: Reseau; yt?: Reseau };
+export type Invite = { nom: string; desc: string; photo: string; /** Carte mise en avant au centre (neige, boules). */ roi?: boolean; ig?: Reseau; tk?: Reseau; yt?: Reseau };
 export const INVITES: Invite[] = [
-  { nom: 'Bertrand Vettes', desc: 'Investisseur & entrepreneur terrain · Immobilier · BTP · Projets', photo: '/img/invites/bertrand.webp', ig: { n: '', url: '' }, yt: { n: '', url: '' } },
+  { nom: 'Bertrand Vettes', desc: 'Investisseur & entrepreneur terrain · Immobilier · BTP · Projets', photo: '/img/invites/bertrand.webp', roi: true, ig: { n: '', url: '' }, yt: { n: '', url: '' } },
   { nom: 'Ludo & Clémentine', desc: 'Rénovation, auto-rénovation et vie de chantier', photo: '/img/invites/ludo-clementine.webp', ig: { n: '', url: '' }, tk: { n: '', url: '' } },
   { nom: 'Florent · Flambadou', desc: 'Traiteur, tournebroche & brasero · Cuisine au feu de bois', photo: '/img/invites/florent.webp', ig: { n: '', url: '' }, tk: { n: '', url: '' } },
-  { nom: 'Bastien · Le Guide du Rouxblard', desc: 'Terroir, bonnes adresses et vie du Sud-Ouest', photo: '/img/invites/bastien.webp', ig: { n: '', url: '' }, tk: { n: '', url: '' } },
   { nom: 'Le Charbonheur', desc: 'Artisan, rénovation et investissement immobilier', photo: '/img/invites/charbonheur.webp', ig: { n: '', url: '' }, tk: { n: '', url: '' } },
   { nom: 'Terre Gauloise', desc: 'Paysages, terroir et patrimoine français', photo: '/img/invites/terre-gauloise.webp', ig: { n: '', url: '' }, tk: { n: '', url: '' } },
 ];

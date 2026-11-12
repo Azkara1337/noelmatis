@@ -1059,10 +1059,10 @@ window.__SEED = [{"id": "b01", "data": {"d": 3, "exposant": "", "lock": false, "
   const notify=()=>setTimeout(()=>ls.forEach(f=>f()),20);
   const db={collection(path){return{path,onSnapshot(next){const f=()=>next(collSnap(path));ls.push(f);setTimeout(f,60);return()=>{};},doc(id){return db.doc(path+'/'+id);}};},
     doc(path){return{id:path.split('/').pop(),path,set:async d=>{window.__writes=(window.__writes||0)+1;store.set(path,JSON.parse(JSON.stringify(d)));notify();},delete:async()=>{store.delete(path);notify();},get:async()=>({exists:store.has(path),data:()=>store.get(path),metadata:meta}),onSnapshot(next){const f=()=>next({id:path.split('/').pop(),exists:store.has(path),data:()=>store.get(path),metadata:meta});ls.push(f);setTimeout(f,60);return()=>{};}};}};
-  window.claude={use:async n=>n==='db'?db:n==='user'?{can:async()=>true}:n==='downloads'?{save:async({filename,data})=>{window.__saved={filename,size:data.size,type:data.type};return{status:'saved'};}}:null};
+  window.claude={use:async n=>n==='db'?db:n==='user'?{can:async()=>false}:n==='downloads'?{save:async({filename,data})=>{window.__saved={filename,size:data.size,type:data.type};return{status:'saved'};}}:null};
   window.__store=store;
 })();
-</script></head><body><title>Plan marché de Noël RC IMMO</title>
+</script></head><body><title>Visite 3D · Marché de Noël</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1249,7 +1249,7 @@ kbd{font:600 11px var(--f-ui);padding:1px 5px;border:1px solid var(--line);borde
 <div class="app" id="app">
   <header class="top">
     <div class="brand">
-      <span class="eyebrow">Marché de Noël RC IMMO · ven. 18 et sam. 19 déc.</span>
+      <span class="eyebrow">Marché de Noël · ven. 18 et sam. 19 déc.</span>
       <h1>Plan d'implantation</h1>
     </div>
     <div class="kpis" aria-live="polite">
@@ -1366,7 +1366,7 @@ const STATUTS = {
   libre:   {name:'Libre',   fill:'rgba(255,255,255,0.92)', stroke:'#22302a', text:'#17201b', front:'#22302a', chip:'#ffffff'},
   option:  {name:'Option',  fill:'rgba(244,182,64,0.94)',  stroke:'#6f4a06', text:'#2b1d02', front:'#6f4a06', chip:'#f4b640'},
   reserve: {name:'Réservé', fill:'rgba(29,122,79,0.94)',   stroke:'#0b3a24', text:'#ffffff', front:'#e6fff1', chip:'#1d7a4f'},
-  rcimmo:  {name:'RC IMMO', fill:'rgba(22,22,24,0.94)',    stroke:'#d23c3c', text:'#ffffff', front:'#e04848', chip:'#18181a'},
+  rcimmo:  {name:'Organisateur', fill:'rgba(22,22,24,0.94)',    stroke:'#d23c3c', text:'#ffffff', front:'#e04848', chip:'#18181a'},
   orga:    {name:'Orga',    fill:'rgba(70,108,166,0.94)',  stroke:'#1d3357', text:'#ffffff', front:'#dbe7ff', chip:'#466ca6'}
 };
 const ZCOL = {braise:'#ff7a2f', sapin:'#35b072', ciel:'#4a90ff', neige:'#f2f5ff', prune:'#b06ae0', sable:'#e8b850'};
@@ -1430,7 +1430,7 @@ const sel = new Set();
 let tool = 'select', elemKind = 'sapin', ghostRot = 0, ghost = null;
 let drawing = null, drag = null, guides = null, hoverW = null, calibPts = null;
 let photoA = 1, showGrid = false, snapOn = true, spaceDown = false;
-let canWrite = true, mode = 'connecting';
+let canWrite = false, mode = 'connecting';   // version publique : lecture seule
 const undoS = [], redoS = [];
 const noteBoxes = new Map();
 const ptrs = new Map(); let pinch = null;
@@ -1493,7 +1493,7 @@ function toDoc(o){
 /* ---------- Persistance ---------- */
 let db = null;
 const pend = new Map(), busy = new Set();
-const LKEY = 'plan-marche-noel-rcimmo-v1';
+const LKEY = 'plan-marche-noel-v1';
 function setStatus(s){
   const t = {connecting: 'Connexion au plan…', saved: 'Enregistré · partagé', saving: 'Enregistrement…', cache: 'Copie locale, en attente du serveur', slow: 'Le plan partagé ne répond pas encore', local: 'Mode local, non partagé', readonly: 'Lecture seule', error: 'Erreur d’enregistrement'}[s] || s;
   $('#status').dataset.s = s; $('#status-t').textContent = t;
@@ -1537,7 +1537,7 @@ let lt = 0;
 function saveLocalSoon(){
   clearTimeout(lt);
   lt = setTimeout(() => {
-    try { localStorage.setItem(LKEY, JSON.stringify({objs: [...objs.values()].map(o => Object.assign(toDoc(o), {id: o.id})), cfg: cfg})); } catch (e){}
+    try { if (canWrite) localStorage.setItem(LKEY, JSON.stringify({objs: [...objs.values()].map(o => Object.assign(toDoc(o), {id: o.id})), cfg: cfg})); } catch (e){}
   }, 300);
 }
 function saveCfg(){
@@ -1566,7 +1566,7 @@ async function initData(){
     afterChange(); return;
   }
   db = ns; mode = 'db';
-  getCap('user').then(u => u && u.can('data.write')).then(w => { if (w === false) setReadOnly('Lecture seule : tu peux consulter le plan.'); }).catch(() => {});
+  getCap('user').then(u => u && u.can('data.write')).then(w => { if (w === false) setReadOnly(); }).catch(() => {});
   let confirmed = false;
   const timer = setTimeout(() => { if (!confirmed) setStatus('slow'); }, 10000);
   try {
@@ -2485,7 +2485,7 @@ function buildStand(fs, o){
   ititle.textContent = 'Stand ' + (o.num == null ? '' : o.num);
   const id = o.id;
   fs.append(
-    h('div', {class: 'fld'}, h('span', {class: 'fld-l', text: 'Statut'}), seg('Statut', Object.keys(STATUTS).map(k => [k, STATUTS[k].name, STATUTS[k].chip]), o.statut, k => updateObj(id, n => { n.statut = k; if (k === 'rcimmo' && !n.exposant) n.exposant = 'RC IMMO'; }))),
+    h('div', {class: 'fld'}, h('span', {class: 'fld-l', text: 'Statut'}), seg('Statut', Object.keys(STATUTS).map(k => [k, STATUTS[k].name, STATUTS[k].chip]), o.statut, k => updateObj(id, n => { n.statut = k; if (k === 'rcimmo' && !n.exposant) n.exposant = 'Organisateur'; }))),
     field('Exposant', inputText('f-expo', o.exposant, v => updateObj(id, n => { n.exposant = v.trim(); }), {ph: 'Nom du commerce', max: 80})),
     h('div', {class: 'row2'}, field('Numéro', inputText('f-num', o.num, v => updateObj(id, n => { n.num = v === '' || !isFinite(+v) ? null : Math.round(+v); }), {type: 'number', step: 1, min: 0, inputmode: 'numeric'})),
       h('div', {class: 'fld'}, h('span', {class: 'fld-l', text: 'Façade'}), h('span', {class: 'muted', id: 'f-front', text: frontDir(o.rot)}))),
@@ -2610,7 +2610,7 @@ async function exportPng(){
   let blob = null;
   try { blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.9)); } catch (e){ blob = null; }
   if (!blob){ toast('Export impossible dans cette vue.'); return; }
-  try { await dl.save({filename: 'plan-marche-noel-rcimmo.jpg', data: blob}); toast('Plan téléchargé.'); }
+  try { await dl.save({filename: 'plan-marche-noel.jpg', data: blob}); toast('Plan téléchargé.'); }
   catch (e){ if (e && e.code === 'declined') return; toast(e && e.code === 'rate_limited' ? 'Un téléchargement est déjà en cours.' : 'Téléchargement impossible ici.'); }
   requestDraw();
 }
@@ -2629,7 +2629,7 @@ const THREE_SRC = [
   ['vendor/three.min.js', 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js'],
   ['vendor/OrbitControls.js', 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js']
 ];
-// hangar ouvert (salle chauffée, Père Noël, jeux) ; bâtiment RC IMMO fermé (pas d'accès public), toit ouvert seulement au-dessus des toilettes
+// hangar ouvert (salle chauffée, Père Noël, jeux) ; bâtiment des bureaux fermé (pas d'accès public), toit ouvert seulement au-dessus des toilettes
 const D3 = window.__D3 = {loading: null, ready: false, on: false, dirty: true, view: 'entree', opts: {hangar: true, annexe: false, voisins: true, labels: true, propre: true}, disp: [], timer: 0};
 function hangarOpen(){ return !!(D3.opts.hangar || D3.view === 'interieurs'); }
 const SITE = {
@@ -2971,7 +2971,7 @@ function zone3(o, i){
   }
   return g;
 }
-// rectangle (mètres « cour ») des toilettes posées dans le bâtiment RC IMMO, pour ouvrir le toit juste au-dessus
+// rectangle (mètres « cour ») des toilettes posées dans le bâtiment des bureaux, pour ouvrir le toit juste au-dessus
 function annexHole(){
   const A = SITE.annexe; let r = null;
   for (const o of ordered()){
@@ -2992,7 +2992,7 @@ function under3(px, py){
 function build3D(){
   if (!D3.ready) return;
   D3.wcLab = [];
-  const hs = JSON.stringify(annexHole());                 // toilettes déplacées dans le bâtiment RC IMMO : on recoupe le toit
+  const hs = JSON.stringify(annexHole());                 // toilettes déplacées dans le bâtiment des bureaux : on recoupe le toit
   if (D3.holeSig !== undefined && D3.holeSig !== hs && !D3.opts.annexe) buildStatic();
   D3.holeSig = hs;
   for (const x of D3.disp) if (x && x.dispose) x.dispose();
@@ -3042,7 +3042,7 @@ function applyView(v){
   const wasOpen = hangarOpen();
   D3.view = v;
   if (hangarOpen() !== wasOpen) buildStatic();                   // la vue « Intérieurs » ouvre le hangar
-  try { localStorage.setItem('mn-view3d', v); } catch (e){}
+  /* version publique : point de vue non mémorisé */
   document.querySelectorAll('[data-v3]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v3 === v)));
   document.querySelectorAll('[data-nav]').forEach(b => { b.disabled = v === 'haut' && b.dataset.nav !== 'in' && b.dataset.nav !== 'out'; });
   if (v === 'haut'){ D3.cam = D3.camO; D3.ctlP.enabled = false; D3.ctlO.enabled = true; fitOrtho(); }
@@ -3118,7 +3118,7 @@ async function setMode(m){
   cv.hidden = is3; $('#hint').hidden = is3; $('#viewctl').hidden = is3; $('#palette').hidden = true;
   $('#d3wrap').hidden = !is3;
   try { location.hash = is3 ? 'vue-3d' : 'plan'; } catch (e){}
-  try { localStorage.setItem('mn-mode', is3 ? '3d' : '2d'); } catch (e){}
+  /* version publique : mode non mémorisé */
   if (!is3){ stopSpin(); if (D3.present) setPresent(false); }
   if (is3){ setTool('select'); sel.clear(); }
   renderInspector(true);
@@ -3153,11 +3153,11 @@ function build3DPanel(fs){
     return h('label', {class: 'chk', for: 'o3-' + key}, cb, label);
   };
   fs.append(
-    h('p', {class: 'p', text: 'La 3D suit le plan : déplace un stand en 2D, il bouge ici. Le hangar est ouvert, toit enlevé : salle chauffée, jeux, Père Noël. Le bâtiment RC IMMO reste fermé (pas d’accès public) ; son toit est ouvert seulement au-dessus des toilettes.'}),
+    h('p', {class: 'p', text: 'La 3D suit le plan : déplace un stand en 2D, il bouge ici. Le hangar est ouvert, toit enlevé : salle chauffée, jeux, Père Noël. Le bâtiment des bureaux reste fermé (pas d’accès public) ; son toit est ouvert seulement au-dessus des toilettes.'}),
     h('div', {class: 'fld'}, h('span', {class: 'fld-l', text: 'Point de vue'}), seg('Point de vue', [['haut', 'Vue du haut'], ['entree', '3/4 entrée'], ['pieton', 'À pied'], ['interieurs', 'Intérieurs']], D3.view, v => { applyView(v); renderInspector(true); })),
     h('div', {class: 'fld'}, h('span', {class: 'fld-l', text: 'Afficher'}),
       chk('hangar', 'Hangar ouvert (salle chauffée, Père Noël)', () => { if (D3.ready){ buildStatic(); build3D(); } }),
-      chk('annexe', 'Bâtiment RC IMMO ouvert en entier', () => { if (D3.ready){ buildStatic(); build3D(); } }),
+      chk('annexe', 'Bâtiment des bureaux ouvert en entier', () => { if (D3.ready){ buildStatic(); build3D(); } }),
       chk('labels', 'Numéros et noms', () => { if (D3.ready) build3D(); }),
       chk('propre', 'Cour sans les voitures', () => { if (D3.ready){ buildStatic(); render3(); } }),
       chk('voisins', 'Bâtiments voisins', () => { if (D3.voisinsGroup){ D3.voisinsGroup.visible = D3.opts.voisins; render3(); } })),

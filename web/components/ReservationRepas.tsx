@@ -18,7 +18,7 @@ export default function ReservationRepas() {
         <ol className="etapes">
           <li><span>1</span><div><b>Je fais ma demande en ligne</b><p className="doux">Le nombre de repas, en deux minutes.</p></div></li>
           <li><span>2</span><div><b>Je reçois la facture par e-mail</b><p className="doux">Je règle par virement : ma réservation est confirmée.</p></div></li>
-          <li><span>3</span><div><b>Je reçois mes tickets et je mange sur place</b><p className="doux">Tickets par e-mail ou à l'accueil, à échanger dans le stand de mon choix, le vendredi ou le samedi.</p></div></li>
+          <li><span>3</span><div><b>Je reçois mes tickets et je mange sur place</b><p className="doux">Tickets par e-mail ou à l'accueil, à échanger dans le stand de mon choix, le vendredi soir ou le samedi.</p></div></li>
         </ol>
       </div>
       <Formulaire

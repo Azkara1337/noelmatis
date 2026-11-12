@@ -131,25 +131,45 @@ function image(lien) {
 }
 
 // Le site envoie un formulaire : POST (corps JSON en texte)
+// L'URL /exec est publique : on vérifie la demande ici, pas seulement dans le navigateur.
+const REQUIS = {stand: ['nom', 'tel'], repas: ['nom', 'email'], partenaire: ['entreprise', 'nom', 'tel']};
+const MAX_PAR_HEURE = 30;          // au-delà, les demandes sont refusées pendant l'heure (anti-spam)
+const MAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function doPost(e) {
   const lock = LockService.getScriptLock();
+  let d, o;
   try {
     lock.waitLock(10000);
-    const d = JSON.parse(e.postData.contents);
-    const o = ONGLETS[d.type];
+    d = JSON.parse(e.postData.contents);
+    o = ONGLETS[d && d.type];
     if (!o) return json({ok: false, erreur: 'type inconnu'});
+    if (d.site_web) return json({ok: true});                       // champ anti-spam rempli : robot, on ignore
+    if (REQUIS[d.type].some(function (k) { return !String(d[k] || '').trim(); })) return json({ok: false, erreur: 'champs manquants'});
+    if (d.email && !MAIL_RE.test(String(d.email).trim())) return json({ok: false, erreur: 'e-mail invalide'});
+    if (!quota()) return json({ok: false, erreur: 'trop de demandes'});
     d.date = Utilities.formatDate(new Date(), 'Europe/Paris', 'dd/MM/yyyy HH:mm');
     d.statut = 'À traiter';
     const ligne = o.cols.map(function (c) { return propre(d[c[0]]); });
     SpreadsheetApp.getActiveSpreadsheet().getSheetByName(o.nom).appendRow(ligne);
-    prevenir(d, o);
-    confirmer(d);
-    return json({ok: true});
   } catch (err) {
     return json({ok: false, erreur: String(err)});
   } finally {
     lock.releaseLock();
   }
+  // La ligne est enregistrée : un souci d'e-mail (quota Gmail…) ne doit pas faire échouer la demande.
+  try { prevenir(d, o); } catch (err) { console.error('prevenir', err); }
+  try { confirmer(d); } catch (err) { console.error('confirmer', err); }
+  return json({ok: true});
+}
+
+// Compteur par heure (CacheService) : limite le nombre de demandes acceptées.
+function quota() {
+  const cache = CacheService.getScriptCache();
+  const cle = 'n_' + Utilities.formatDate(new Date(), 'Europe/Paris', 'yyyyMMddHH');
+  const n = parseInt(cache.get(cle) || '0', 10) + 1;
+  cache.put(cle, String(n), 3700);
+  return n <= MAX_PAR_HEURE;
 }
 
 function propre(v) {
@@ -167,8 +187,13 @@ function prevenir(d, o) {
 
 function confirmer(d) {
   const mail = String(d.email || '').trim();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) return;
-  const bonjour = 'Bonjour ' + (d.nom || '') + ',\n\n';
+  if (!MAIL_RE.test(mail)) return;
+  if (MailApp.getRemainingDailyQuota() < 20) return;               // on garde le quota pour prévenir l'organisation
+  const cache = CacheService.getScriptCache(), cle = 'c_' + Utilities.base64EncodeWebSafe(mail.toLowerCase()).slice(0, 200);
+  if (cache.get(cle)) return;                                      // une confirmation par adresse et par heure
+  cache.put(cle, '1', 3600);
+  const nom = String(d.nom || '').replace(/https?:\/\/\S+|www\.\S+/gi, '').replace(/[<>]/g, '').trim().slice(0, 60);
+  const bonjour = 'Bonjour ' + nom + ',\n\n';
   const fin = '\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nÀ très vite,\nL\'équipe du ' + NOM_EVENT + '\n' + DATES;
   const txt = {
     stand: 'Nous avons bien reçu votre demande de stand' + (d.stand ? ' (stand ' + d.stand + ')' : '') + ' pour le ' + NOM_EVENT + '. Nous vous rappelons pour confirmer votre emplacement, puis nous vous envoyons la facture par e-mail. Votre stand est réservé seulement à réception du paiement.',

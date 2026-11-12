@@ -14,6 +14,7 @@ export default function MentionsLegales() {
       <ul>
         <li><b>Nom :</b> <Champ v={o.nom} /></li>
         <li><b>Forme juridique :</b> <Champ v={o.statut} /></li>
+        <li><b>Capital social :</b> <Champ v={o.capital} label="capital à compléter" /></li>
         <li><b>Siège :</b> <Champ v={o.adresse} /></li>
         <li><b>Immatriculation (SIRET, RCS ou RNA) :</b> <Champ v={o.immatriculation} /></li>
         <li><b>Téléphone :</b> {TELEPHONE}</li>

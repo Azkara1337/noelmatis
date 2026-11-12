@@ -37,7 +37,7 @@ export default function PagePartenaire() {
             <div className="ofl-prix"><span className="pill">2 500 € <small>HT</small></span><div className="ofl-rep"><b>40</b><span>repas offerts</span></div><a className="btn" href="#contact" onClick={() => setPack('Partenaire Prestige')}>Choisir</a></div>
           </article>
         </div>
-        <p className="ht doux">Prix hors taxes, pour les deux jours. 1 repas offert = 1 ticket, valable le vendredi soir ou le samedi dans les stands de restauration du marché (valeur 20 € TTC).</p>
+        <p className="ht doux">Prix hors taxes, pour les deux jours. 1 repas offert = 1 ticket, valable le vendredi soir ou le samedi dans les stands de restauration du marché (valeur {fmt(PRIX_REPAS)} TTC).</p>
 
         <div className="calc" id="calcul" style={{marginTop:'48px'}}>
           <div>

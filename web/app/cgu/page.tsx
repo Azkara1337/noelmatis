@@ -17,7 +17,7 @@ export default function Cgu() {
 
       <h2>3. Stands exposants</h2>
       <ul>
-        <li>Le formulaire est une <b>demande</b> : il ne réserve pas le stand. L'organisation vous rappelle pour confirmer l'emplacement, et la réservation n'est ferme qu'après cette confirmation.</li>
+        <li>Le formulaire est une <b>demande</b> : il ne réserve pas le stand. L'organisation vous rappelle pour confirmer l'emplacement, puis vous envoie la facture : le stand n'est réservé qu'à réception du paiement.</li>
         <li>Le stand choisi sur le plan est un souhait. L'organisation peut proposer un autre emplacement selon les disponibilités et l'équilibre du marché.</li>
         <li>Les prix affichés sont hors taxes, pour les deux jours.</li>
         <li><b>Paiement :</b> <Champ v={c.paiementStand} /></li>
