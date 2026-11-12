@@ -576,3 +576,4 @@ main.page{overflow-x:clip}
 .inv-c.detoure .detoure-img{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:auto;height:122%;max-width:104%;object-fit:contain;object-position:bottom center;filter:drop-shadow(0 10px 14px rgba(0,0,0,.35));z-index:1}
 .inv-c.roi.detoure .detoure-img{inset:auto 0 0 0;transform:none;width:100%;max-width:none;height:107%;object-fit:cover;object-position:42% bottom}
 .inv-c.detoure .inv-nom{z-index:2}
+.inv-rs small{font:600 13px/1 var(--fc);color:var(--doux)}

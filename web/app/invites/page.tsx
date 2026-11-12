@@ -4,10 +4,10 @@ import { INVITES, type Invite, type Reseau as ReseauT } from '@/lib/config';
 
 export const metadata: Metadata = { title: 'Invités' };
 
-// Un réseau ne s'affiche que s'il a un nombre d'abonnés (aucun chiffre inventé).
+// Un réseau ne s'affiche que s'il a un nombre d'abonnés (relevé sur le compte, aucun chiffre inventé).
 function Reseau({ k, r }: { k: 'ig' | 'tk' | 'yt'; r?: ReseauT }) {
   if (!r || !r.n) return null;
-  return r.url ? <a href={r.url} target="_blank" rel="noopener">{ICONES[k]}{r.n}</a> : <span>{ICONES[k]}{r.n}</span>;
+  return r.url ? <a href={r.url} target="_blank" rel="noopener">{ICONES[k]}<span>{r.n}<small> abonnés</small></span></a> : <span>{ICONES[k]}<span>{r.n}<small> abonnés</small></span></span>;
 }
 
 function CarteInvite({ v }: { v: Invite }) {

@@ -52,8 +52,8 @@ export type Reseau = { n: string; url: string };
 export type Invite = { nom: string; desc: string; photo: string; /** Photo détourée (fond transparent) : la tête sort de la carte. */ detour?: string; /** Carte mise en avant au centre (plus grande, bordure dorée). */ roi?: boolean; ig?: Reseau; tk?: Reseau; yt?: Reseau };
 export const INVITES: Invite[] = [
   { nom: 'Bertrand Vettes', desc: 'Investisseur & entrepreneur terrain · Immobilier · BTP · Projets', photo: '/img/invites/bertrand.webp', detour: '/img/invites/detour/bertrand.webp', roi: true, ig: { n: '', url: '' }, yt: { n: '', url: '' } },
-  { nom: 'Ludo & Clémentine', desc: 'Rénovation, auto-rénovation et vie de chantier', photo: '/img/invites/ludo-clementine.webp', detour: '/img/invites/detour/ludo-clementine.webp', ig: { n: '', url: '' }, tk: { n: '', url: '' } },
-  { nom: 'Florent · Flambadou', desc: 'Traiteur, tournebroche & brasero · Cuisine au feu de bois', photo: '/img/invites/florent.webp', detour: '/img/invites/detour/florent.webp', ig: { n: '', url: '' }, tk: { n: '', url: '' } },
-  { nom: 'Le Charbonheur', desc: 'Artisan, rénovation et investissement immobilier', photo: '/img/invites/charbonheur.webp', detour: '/img/invites/detour/charbonheur.webp', ig: { n: '', url: '' }, tk: { n: '', url: '' } },
-  { nom: 'Terre Gauloise', desc: 'Paysages, terroir et patrimoine français', photo: '/img/invites/terre-gauloise.webp', ig: { n: '', url: '' }, tk: { n: '', url: '' } },
+  { nom: 'Ludo & Clémentine', desc: 'Rénovation, auto-rénovation et vie de chantier', photo: '/img/invites/ludo-clementine.webp', detour: '/img/invites/detour/ludo-clementine.webp', ig: { n: "31 k", url: "https://www.instagram.com/ludo_clem_renovation/" } },
+  { nom: 'Florent · Flambadou', desc: 'Traiteur, tournebroche & brasero · Cuisine au feu de bois', photo: '/img/invites/florent.webp', detour: '/img/invites/detour/florent.webp', ig: { n: "37 k", url: "https://www.instagram.com/flambadouu/" }, tk: { n: "3 k", url: "https://www.tiktok.com/@flambadouu" } },
+  { nom: 'Le Charbonheur', desc: 'Artisan, rénovation et investissement immobilier', photo: '/img/invites/charbonheur.webp', detour: '/img/invites/detour/charbonheur.webp', ig: { n: "41 k", url: "https://www.instagram.com/le_charbonheur/" } },
+  { nom: 'Terre Gauloise', desc: 'Paysages, terroir et patrimoine français', photo: '/img/invites/terre-gauloise.webp', ig: { n: "55 k", url: "https://www.instagram.com/terre.gauloise/" }, tk: { n: "13,4 k", url: "https://www.tiktok.com/@terre.gauloise" } },
 ];
