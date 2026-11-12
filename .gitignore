@@ -1,0 +1,8 @@
+.DS_Store
+.claude/
+.vercel/
+.env*
+web/node_modules/
+web/.next/
+web/out/
+web/*.tsbuildinfo
