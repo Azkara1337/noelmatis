@@ -134,7 +134,9 @@ function image(lien) {
 // L'URL /exec est publique : on vérifie la demande ici, pas seulement dans le navigateur.
 const REQUIS = {stand: ['nom', 'tel'], repas: ['nom', 'email'], partenaire: ['entreprise', 'nom', 'tel']};
 const MAX_PAR_HEURE = 30;          // au-delà, les demandes sont refusées pendant l'heure (anti-spam)
-const MAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAIL_RE = /^[^\s@<>"'`]+@[^\s@<>"'`]+\.[a-z]{2,}$/i;
+const TEL_RE = /^(?:0[1-9]\d{8}|\+[1-9]\d{7,14})$/;
+const NOM_RE = /^[\p{L}\p{M}0-9 '’.,&()\/+-]+$/u;
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
@@ -142,11 +144,18 @@ function doPost(e) {
   try {
     lock.waitLock(10000);
     d = JSON.parse(e.postData.contents);
-    o = ONGLETS[d && d.type];
+    o = (d && Object.prototype.hasOwnProperty.call(ONGLETS, d.type)) ? ONGLETS[d.type] : null;   // seulement stand, repas ou partenaire
     if (!o) return json({ok: false, erreur: 'type inconnu'});
     if (d.site_web) return json({ok: true});                       // champ anti-spam rempli : robot, on ignore
     if (REQUIS[d.type].some(function (k) { return !String(d[k] || '').trim(); })) return json({ok: false, erreur: 'champs manquants'});
     if (d.email && !MAIL_RE.test(String(d.email).trim())) return json({ok: false, erreur: 'e-mail invalide'});
+    // Mêmes règles que web/lib/validation.ts : le navigateur peut être contourné, pas ce script.
+    if (d.tel) {
+      d.tel = String(d.tel).replace(/[\s.\-()]/g, '');
+      if (!TEL_RE.test(d.tel)) return json({ok: false, erreur: 'téléphone invalide'});
+    }
+    if (['nom', 'activite', 'entreprise'].some(function (k) { return d[k] && !NOM_RE.test(String(d[k])); })) return json({ok: false, erreur: 'nom invalide'});
+    if (d.salaries && !/^\d{1,4}$/.test(String(d.salaries))) return json({ok: false, erreur: 'salariés invalide'});
     if (!quota()) return json({ok: false, erreur: 'trop de demandes'});
     d.date = Utilities.formatDate(new Date(), 'Europe/Paris', 'dd/MM/yyyy HH:mm');
     d.statut = 'À traiter';
@@ -174,6 +183,7 @@ function quota() {
 
 function propre(v) {
   let s = (v === undefined || v === null) ? '' : String(v).slice(0, 1000);
+  s = s.replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, ' ').replace(/[<>]/g, '');   // pas de balise HTML ni de caractère de contrôle
   if (/^[=+\-@]/.test(s)) s = "'" + s;   // évite qu'une saisie soit lue comme une formule
   return s;
 }

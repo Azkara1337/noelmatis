@@ -33,7 +33,7 @@ export default function ReservationRepas() {
       >
         <h3>Mes tickets repas</h3>
         <div className="deux"><label>Nom<input id="re-nom" name="nom" autoComplete="name" /></label><label>E-mail<input id="re-mail" name="email" type="email" autoComplete="email" /></label></div>
-        <label>Téléphone<input id="re-tel" name="tel" type="tel" autoComplete="tel" /></label>
+        <label>Téléphone<input id="re-tel" name="tel" type="tel" inputMode="tel" autoComplete="tel" maxLength={20} placeholder="06 12 34 56 78" /></label>
         <label>Je réserve en tant que<select id="re-type" name="profil"><option>Particulier</option><option>Entreprise (facture)</option></select></label>
         <input type="hidden" name="repas" value={String(n)} />
         <input type="hidden" name="total_ttc" value={total} />

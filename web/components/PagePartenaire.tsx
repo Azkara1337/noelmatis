@@ -69,7 +69,7 @@ export default function PagePartenaire() {
             <h3>Je deviens partenaire du Marché de Noël</h3>
             <p className="doux" style={{fontSize:'14px'}}>On vous rappelle sous 48 h pour valider votre offre.</p>
             <div className="deux"><label>Entreprise<input id="pa-ent" name="entreprise" autoComplete="organization" /></label><label>Nom<input id="pa-nom" name="nom" autoComplete="name" /></label></div>
-            <div className="deux"><label>Téléphone<input id="pa-tel" name="tel" type="tel" autoComplete="tel" /></label><label>E-mail<input id="pa-mail" name="email" type="email" autoComplete="email" /></label></div>
+            <div className="deux"><label>Téléphone<input id="pa-tel" name="tel" type="tel" inputMode="tel" autoComplete="tel" maxLength={20} placeholder="06 12 34 56 78" /></label><label>E-mail<input id="pa-mail" name="email" type="email" autoComplete="email" /></label></div>
             <label>Salariés à inviter<input id="pa-sal" name="salaries" type="number" min="1" inputMode="numeric" /></label>
             <label>Offre<select id="pack" name="offre" value={pack} onChange={e => setPack(e.target.value)}><option>Sapin Gourmand</option><option>Étoile de Noël</option><option>Maison du Père Noël</option><option>Partenaire Prestige</option><option>Je ne sais pas encore</option></select></label>
             <label>Message<textarea id="pa-msg" name="message" placeholder="Votre activité, vos questions…"></textarea></label>

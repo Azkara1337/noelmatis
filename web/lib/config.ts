@@ -12,7 +12,7 @@ export const TELEPHONE_LIEN = 'tel:+33534032440';
 /** Stands déjà pris : secours si le Google Sheet ne répond pas. */
 export const DEJA: Record<number, string> = { 7: 'Crêpes', 11: 'Churros', 24: 'Aligot', 25: 'Brasero', 26: 'Vin chaud', 27: 'Raclette' };
 /** URL /exec de l'Apps Script (Déployer > Application Web). Obligatoire : vide = les formulaires affichent une erreur. */
-export const ENDPOINT = 'https://script.google.com/macros/s/AKfycbwIqNhelbsiRQOK6Nky4m8-Q5PDNF3ZQ7r_Bxdrncn7j0zIL1A0BnjEvm6h-2L33KDx/exec';
+export const ENDPOINT = 'https://script.google.com/macros/s/AKfycbw5eFSO-WeJ96vZPmzn15mRJTUTzZ1JaylhGq6MVRYnetwPGS86KZhUUtk_sBXaEj6N/exec';
 /**
  * Organisateur (pages Mentions légales, Confidentialité, CGU). Un champ vide = étiquette « à compléter ».
  * nom : raison sociale ou nom de l'association · statut : ex. 'Association loi 1901', 'SAS' · capital : capital social (obligatoire pour une société, vide pour une association)

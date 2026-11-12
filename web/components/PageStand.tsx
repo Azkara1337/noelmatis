@@ -148,7 +148,7 @@ export default function PageStand() {
           <h3>Je réserve mon stand</h3>
           <p className="doux" style={{fontSize:'14px'}}>Choisissez votre stand sur le plan ou ici. L'organisation vous rappelle pour confirmer votre emplacement.</p>
           <div className="deux"><label>Nom et prénom<input id="ex-nom" name="nom" autoComplete="name" /></label><label>Nom de votre activité<input id="ex-ent" name="activite" autoComplete="organization" /></label></div>
-          <div className="deux"><label>Téléphone<input id="ex-tel" name="tel" type="tel" autoComplete="tel" /></label><label>E-mail<input id="ex-mail" name="email" type="email" autoComplete="email" /></label></div>
+          <div className="deux"><label>Téléphone<input id="ex-tel" name="tel" type="tel" inputMode="tel" autoComplete="tel" maxLength={20} placeholder="06 12 34 56 78" /></label><label>E-mail<input id="ex-mail" name="email" type="email" autoComplete="email" /></label></div>
           <label>Stand souhaité<select id="ex-stand" name="stand" value={standOk} onChange={e => setStand(e.target.value)}><option value="">Pas de préférence</option>{libres.map(n => <option key={n} value={String(n)}>Stand {n}</option>)}</select></label>
           <label>Catégorie<select id="ex-cat" name="categorie" value={cat} onChange={e => setCat(e.target.value)}><option>Artisanat, créations</option><option>Producteur, terroir</option><option>Snacking, gourmandises</option><option>Restauration, spécialités</option><option>Stand Premium, brasero</option><option>Je ne sais pas encore</option></select></label>
           <label>En une phrase<textarea id="ex-msg" name="message" placeholder="Bougies, couronnes, confitures…"></textarea></label>
