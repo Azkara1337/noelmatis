@@ -14,7 +14,7 @@ export default function Visite3D() {
   return (
     <div className="v3d" id="v3d" ref={box}>
       {charge
-        ? <iframe title="Maquette 3D du marché" src="/visite3d/index.html" allowFullScreen />
+        ? <iframe title="Maquette 3D du marché" src={process.env.NODE_ENV === 'development' ? '/visite3d/index.html' : '/visite3d/'} allowFullScreen />
         : <><img src="/img/poster.jpg" alt="Aperçu de la maquette 3D du marché" /><button className="go" id="go3d" type="button" onClick={() => setCharge(true)}><span>Lancer la visite 3D</span></button></>}
     </div>
   );

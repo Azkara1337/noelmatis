@@ -54,7 +54,7 @@ Les étiquettes `<span className="tbc">…</span>` signalent les infos à confir
 - Ne lance jamais `npm run build` pendant que `npm run dev` tourne : ça casse le serveur de dev (erreur `Cannot find module`). Pour vérifier les types, utilise plutôt `npx tsc --noEmit`.
 
 **Pièges connus :**
-- Vercel publie les fichiers `.html` de `public/` sans l'extension (`/x.html` répond 404, `/x/` répond). Range une page HTML dans un dossier (`public/x/index.html`) et appelle `/x/index.html`.
+- Vercel publie les fichiers `.html` de `public/` sans l'extension (`/x.html` répond 404, `/x/` répond). Range une page HTML dans un dossier (`public/x/index.html`) : en production appelle `/x/` (et `/x/index.html` aussi répond 404), en dev `next dev` ne sert que `/x/index.html`. Voir `components/Visite3D.tsx`.
 - TypeScript doit rester en version 5 (Next 15 ne lit pas TypeScript 7 et ignore alors les alias `@/`).
 - Le cache npm de la machine a des fichiers appartenant à root : lance npm avec `npm_config_cache=$TMPDIR/npm-cache`.
 
