@@ -19,7 +19,7 @@ Site du Marché de Noël des Artisans & Commerçants, **vendredi 18, samedi 19 e
 ```ts
 ADRESSE = ''          // adresse du marché, copiable par le bouton
 VILLE = ''            // ville du badge des dates
-PRIX_REPAS = 20       // € TTC le repas
+PRIX_MOYENNE = 10 / PRIX_GRANDE = 20   // € TTC la portion ; OFFRE_REPAS = 5 achetés = 1 offert jusqu'au 10/12 (mêmes valeurs dans Code.gs) ; PRIX_REPAS = valeur d'un repas offert aux partenaires
 TELEPHONE = '05 34 03 24 40'
 DEJA = {...}          // stands déjà pris (secours si le Sheet ne répond pas)
 ENDPOINT = ''         // URL /exec de l'Apps Script. Vide = les formulaires affichent une erreur (plus de mode maquette)

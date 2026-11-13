@@ -32,11 +32,13 @@ const NOM_EVENT = 'Marché de Noël';
 const DATES = 'vendredi 18, samedi 19 et dimanche 20 décembre 2026';
 const TELEPHONE = '05 34 03 24 40';
 const STANDS_DEJA = {7: 'Crêpes', 11: 'Churros', 24: 'Aligot', 25: 'Brasero', 26: 'Vin chaud', 27: 'Raclette'};
+const PRIX_MOYENNE = 10, PRIX_GRANDE = 20;           // repas, en € TTC (mêmes valeurs que web/lib/config.ts)
+const OFFRE_LOT = 5, OFFRE_FIN = '2026-12-10T23:59:59+01:00';   // 5 repas achetés = 1 offert, jusqu'au 10 décembre inclus
 // =====================
 
 const ONGLETS = {
   stand: {nom: 'Stands', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['nom', 'Nom'], ['activite', 'Activité'], ['tel', 'Téléphone'], ['email', 'E-mail'], ['stand', 'Stand souhaité'], ['categorie', 'Catégorie'], ['message', 'Message'], ['code_promo', 'Code promo']]},
-  repas: {nom: 'Repas', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['nom', 'Nom'], ['email', 'E-mail'], ['tel', 'Téléphone'], ['profil', 'Profil'], ['repas', 'Nb repas'], ['total_ttc', 'Total TTC'], ['code_promo', 'Code promo']]},
+  repas: {nom: 'Repas', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['nom', 'Nom'], ['email', 'E-mail'], ['tel', 'Téléphone'], ['profil', 'Profil'], ['repas', 'Nb repas'], ['total_ttc', 'Total TTC'], ['code_promo', 'Code promo'], ['moyennes', 'Moyennes'], ['grandes', 'Grandes'], ['offerts', 'Offerts'], ['offert_type', 'Type offert']]},
   partenaire: {nom: 'Partenaires', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['entreprise', 'Entreprise'], ['nom', 'Contact'], ['tel', 'Téléphone'], ['email', 'E-mail'], ['salaries', 'Salariés'], ['offre', 'Offre'], ['message', 'Message'], ['code_promo', 'Code promo']]}
 };
 
@@ -160,6 +162,16 @@ function doPost(e) {
       d.code_promo = String(d.code_promo).replace(/\s+/g, '').toUpperCase();
       if (!/^[A-Z0-9_-]{1,30}$/.test(d.code_promo)) return json({ok: false, erreur: 'code promo invalide'});
     }
+    if (d.type === 'repas') {
+      // On recalcule ici le total et les repas offerts : on ne se fie pas aux chiffres envoyés par le navigateur.
+      const m = parseInt(d.moyennes || '0', 10), g = parseInt(d.grandes || '0', 10);
+      if (!(m >= 0 && m <= 99 && g >= 0 && g <= 99 && m + g > 0)) return json({ok: false, erreur: 'nombre de repas invalide'});
+      const offerts = new Date() <= new Date(OFFRE_FIN) ? Math.floor((m + g) / OFFRE_LOT) : 0;
+      d.moyennes = String(m); d.grandes = String(g); d.repas = String(m + g);
+      d.total_ttc = (m * PRIX_MOYENNE + g * PRIX_GRANDE) + ' €';
+      d.offerts = String(offerts);
+      d.offert_type = offerts > 0 ? (d.offert_type === 'Grande' ? 'Grande' : 'Moyenne') : '';
+    }
     if (!quota()) return json({ok: false, erreur: 'trop de demandes'});
     d.date = Utilities.formatDate(new Date(), 'Europe/Paris', 'dd/MM/yyyy HH:mm');
     d.statut = 'À traiter';
@@ -221,7 +233,7 @@ function confirmer(d) {
   const fin = '\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nÀ très vite,\nL\'équipe du ' + NOM_EVENT + '\n' + DATES;
   const txt = {
     stand: 'Nous avons bien reçu votre demande de stand' + (d.stand ? ' (stand ' + d.stand + ')' : '') + ' pour le ' + NOM_EVENT + '. Nous vous rappelons pour confirmer votre emplacement, puis nous vous envoyons la facture par e-mail. Votre stand est réservé seulement à réception du paiement.',
-    repas: 'Nous avons bien reçu votre demande de ' + (d.repas || '') + ' repas (' + (d.total_ttc || '') + ' TTC) pour le ' + NOM_EVENT + '. Vous allez recevoir la facture par e-mail, à régler par virement : votre réservation est confirmée dès le paiement. Vos tickets vous sont ensuite envoyés par e-mail, ou vous les retirez à l\'accueil du marché.',
+    repas: 'Nous avons bien reçu votre demande de ' + (d.repas || '') + ' repas (' + (d.moyennes || 0) + ' moyenne(s), ' + (d.grandes || 0) + ' grande(s), ' + (d.total_ttc || '') + ' TTC)' + (+d.offerts > 0 ? ', plus ' + d.offerts + ' repas offert(s) en portion ' + String(d.offert_type).toLowerCase() : '') + ' pour le ' + NOM_EVENT + '. Vous allez recevoir la facture par e-mail, à régler par virement : votre réservation est confirmée dès le paiement. Vos tickets vous sont ensuite envoyés par e-mail, ou vous les retirez à l\'accueil du marché.',
     partenaire: 'Nous avons bien reçu votre demande pour l\'offre « ' + (d.offre || '') + ' ». Nous vous rappelons sous 48 h.'
   }[d.type];
   MailApp.sendEmail({to: mail, subject: NOM_EVENT + ' · demande bien reçue', body: bonjour + txt + fin, name: NOM_EVENT});

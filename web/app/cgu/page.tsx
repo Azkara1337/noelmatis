@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import PageLegale, { Champ } from '@/components/Legal';
-import { CONDITIONS, ORGANISATEUR, PAIEMENT, PRIX_REPAS, TELEPHONE } from '@/lib/config';
+import { CONDITIONS, OFFRE_REPAS, ORGANISATEUR, PAIEMENT, PRIX_GRANDE, PRIX_MOYENNE, TELEPHONE } from '@/lib/config';
 
 export const metadata: Metadata = { title: "Conditions générales" };
 
@@ -27,7 +27,7 @@ export default function Cgu() {
 
       <h2>4. Repas</h2>
       <ul>
-        <li>Prix : {PRIX_REPAS} € TTC le repas. 1 ticket = 1 portion, à échanger dans les stands de restauration du marché, pendant les 3 jours.</li>
+        <li>Prix : {PRIX_MOYENNE} € TTC la portion moyenne, {PRIX_GRANDE} € TTC la grande portion. Pour toute réservation jusqu'au {OFFRE_REPAS.finTexte} inclus, {OFFRE_REPAS.lot} repas achetés donnent droit à 1 repas offert (moyenne ou grande, au choix). 1 ticket = 1 portion, à échanger dans les stands de restauration du marché, pendant les 3 jours.</li>
         <li><b>Paiement et retrait :</b> {PAIEMENT}</li>
         <li><b>Annulation :</b> <Champ v={c.annulationRepas} /></li>
         <li>Les repas étant servis à une date déterminée, il n'y a pas de droit de rétractation (article L221-28 du Code de la consommation).</li>

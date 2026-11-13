@@ -38,9 +38,15 @@ export function StatsInvites() {
 
 /** Grille des invités : la carte « roi » (Bertrand) au centre, les autres autour. */
 export default function GrilleInvites({ id }: { id?: string }) {
+  // Au-delà de 4 invités autour du centre, une 3e rangée : la carte « +10 créateurs » se place au milieu.
+  const autres = INVITES.filter(v => !v.roi).length;
+  const roi = INVITES.some(v => v.roi);
   return (
-    <div className={'inv-g' + (INVITES.some(v => v.roi) ? ' autour' : '')} id={id}>
-      {[...INVITES].sort((a, b) => Number(!!b.roi) - Number(!!a.roi)).map(v => <CarteInvite key={v.nom} v={v} />)}
+    <div className="inv-scene">
+      <div className={'inv-g' + (roi ? ' autour' : '')} id={id}>
+        {roi && autres > 4 && <div className="inv-plus"><b>{CREATEURS || INVITES.length}</b><span>créateurs au total</span><small>et d'autres surprises vous attendent sur place !</small></div>}
+        {[...INVITES].sort((a, b) => Number(!!b.roi) - Number(!!a.roi)).map(v => <CarteInvite key={v.nom} v={v} />)}
+      </div>
     </div>
   );
 }

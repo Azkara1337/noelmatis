@@ -4,8 +4,13 @@
 export const ADRESSE = '10 B rue Jean Rostand, 09100 Pamiers';
 /** Ville affichée dans le badge des dates, ex. 'Pamiers (09)'. Vide = « Lieu dévoilé bientôt ». */
 export const VILLE = 'Pamiers (09)';
-/** Prix d'un repas, en € TTC. */
-export const PRIX_REPAS = 20;
+/** Repas : deux portions, en € TTC. */
+export const PRIX_MOYENNE = 10;
+export const PRIX_GRANDE = 20;
+/** Offre repas : pour chaque lot de 5 repas achetés, 1 offert (moyenne ou grande), pour les réservations jusqu'au 10 décembre inclus. */
+export const OFFRE_REPAS = { lot: 5, fin: '2026-12-10T23:59:59+01:00', finTexte: '10 décembre' };
+/** Valeur d'un repas offert aux partenaires (offres partenaires) : une grande portion. */
+export const PRIX_REPAS = PRIX_GRANDE;
 /** Téléphone de l'organisation (affiché, copiable, et cité dans les messages d'erreur). */
 export const TELEPHONE = '05 34 03 24 40';
 export const TELEPHONE_LIEN = 'tel:+33534032440';
@@ -60,4 +65,6 @@ export const INVITES: Invite[] = [
   { nom: 'Florent · Flambadou', desc: 'Traiteur, tournebroche & brasero · Cuisine au feu de bois', photo: '/img/invites/florent.webp', detour: '/img/invites/detour/florent.webp', ig: { n: "37 k", url: "https://www.instagram.com/flambadouu/" }, tk: { n: "3 k", url: "https://www.tiktok.com/@flambadouu" } },
   { nom: 'Le Charbonheur', desc: 'Artisan, rénovation et investissement immobilier', photo: '/img/invites/charbonheur.webp', detour: '/img/invites/detour/charbonheur.webp', ig: { n: "41 k", url: "https://www.instagram.com/le_charbonheur/" } },
   { nom: 'Terre Gauloise', desc: 'Paysages, terroir et patrimoine français', photo: '/img/invites/terre-gauloise.webp', ig: { n: "55 k", url: "https://www.instagram.com/terre.gauloise/" }, tk: { n: "13,4 k", url: "https://www.tiktok.com/@terre.gauloise" } },
+  { nom: 'Damien', desc: 'Créateur de contenu', photo: '' },
+  { nom: 'Baptiste', desc: 'Créateur de contenu', photo: '' },
 ];
