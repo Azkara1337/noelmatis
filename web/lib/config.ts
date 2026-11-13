@@ -50,8 +50,10 @@ export const PARTENAIRES: Partenaire[] = [
 /** Invités : n = nombre d'abonnés affiché, url = lien du compte. Un réseau sans n ne s'affiche pas. */
 export type Reseau = { n: string; url: string };
 export type Invite = { nom: string; desc: string; photo: string; /** Photo détourée (fond transparent) : la tête sort de la carte. */ detour?: string; /** Carte mise en avant au centre (plus grande, bordure dorée). */ roi?: boolean; ig?: Reseau; tk?: Reseau; yt?: Reseau };
-/** Audience cumulée des invités, chiffre donné par l'organisation (12/11/2026). Vide = rien n'est affiché. */
-export const VUES_MOIS = '25 millions';
+/** Audience cumulée des invités, chiffres donnés par l'organisation (13/11/2026). Vide = rien n'est affiché. */
+export const VUES_MOIS = '50 millions';
+/** Nombre de créateurs annoncé (plus que les cartes affichées). Vide = nombre de cartes. */
+export const CREATEURS = '+10';
 export const INVITES: Invite[] = [
   { nom: 'Bertrand Vettes', desc: 'Investisseur & entrepreneur terrain · Immobilier · BTP · Projets', photo: '/img/invites/bertrand.webp', detour: '/img/invites/detour/bertrand.webp', roi: true, ig: { n: '30 k', url: 'https://www.instagram.com/bertrand_rcimmo/' }, tk: { n: '5,2 k', url: 'https://www.tiktok.com/@bertrand.rcimmo' }, yt: { n: '2,7 k', url: 'https://www.youtube.com/@bertrandrcimmo' } },
   { nom: 'Ludo & Clémentine', desc: 'Rénovation, auto-rénovation et vie de chantier', photo: '/img/invites/ludo-clementine.webp', detour: '/img/invites/detour/ludo-clementine.webp', ig: { n: "31 k", url: "https://www.instagram.com/ludo_clem_renovation/" } },

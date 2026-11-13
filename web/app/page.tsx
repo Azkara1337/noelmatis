@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import GrilleInvites, { StatsInvites } from '@/components/Invites';
 
 export const metadata: Metadata = { title: { absolute: 'Marché de Noël des Artisans & Commerçants · Pamiers' } };
 
@@ -27,9 +28,15 @@ export default function Accueil() {
           <div className="anim-g">
             <Link className="anim-c" href="/visite"><img src="/img/pn2.jpg" alt="Une enfant sur les genoux du Père Noël" loading="lazy" /><span>Le Père Noël<small>et son univers</small></span></Link>
             <Link className="anim-c" href="/visite"><img src="/img/salle.jpg" alt="Le château gonflable dans la salle chauffée" loading="lazy" /><span>Jeux gonflables<small>et espace enfants</small></span></Link>
-            <Link className="anim-c" href="/repas"><img src="/img/resto.jpg" alt="Un cuisinier sert l'aligot à un stand du marché" loading="lazy" /><span>Restauration gourmande<small>aligot, brasero, spécialités…</small></span></Link>
-            <Link className="anim-c" href="/stand"><img src="/img/arti.jpg" alt="Un stand d'artisanat du marché" loading="lazy" /><span>Artisans et créateurs<small>déco, cadeaux, idées originales…</small></span></Link>
           </div>
+        </div>
+
+
+        <div className="acc-inv">
+          <div className="xrubanw"><div className="xruban"><b>Nos créateurs invités</b></div></div>
+          <StatsInvites />
+          <GrilleInvites />
+          <p className="acc-inv-plus"><Link className="btn plein" href="/invites">Découvrir tous nos invités</Link></p>
         </div>
 
         <div className="acc-cta">

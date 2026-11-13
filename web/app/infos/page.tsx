@@ -18,7 +18,7 @@ export default function Infos() {
         <div style={{maxWidth:'760px',marginTop:'32px'}}>
           <Faq q={"Y a-t-il un endroit au chaud ?"}>Oui : la salle chauffée, avec le château gonflable et le Père Noël.</Faq>
           <Faq q={"Peut-on manger sur place ?"}>Oui : crêpes, churros, aligot, brasero, vin chaud et d'autres stands.</Faq>
-          <Faq q={"Exposant : quand s'installer ?"}>Installation possible dès 8 h le matin. L'organisation vous confirme votre créneau par téléphone.</Faq>
+          <Faq q={"Exposant : quand s'installer ?"}>Installation le vendredi matin, de 8 h à 11 h. Ouverture au public à 14 h.</Faq>
         </div>
       </div></section><section style={{paddingTop:'0'}}><div className="wrap">
         <div className="final"><h2>On vous attend du 18 au 20 décembre.</h2><div style={{display:'flex',gap:'10px',flexWrap:'wrap'}}><Link className="btn blanc" href="/stand">Exposer</Link><Link className="btn blanc" href="/partenaire">Je deviens partenaire</Link></div></div>

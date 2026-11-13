@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Faq from './Faq';
 import Formulaire from './Formulaire';
-import { INVITES, PRIX_REPAS, VUES_MOIS } from '@/lib/config';
+import { CREATEURS, PRIX_REPAS, VUES_MOIS } from '@/lib/config';
 import { ICONES } from './icones';
 
 const OFFRES = [{ n: 'Étoile de Noël', p: 200, r: 3 }, { n: 'Sapin Gourmand', p: 400, r: 6 }, { n: 'Maison du Père Noël', p: 1200, r: 20 }, { n: 'Partenaire Prestige', p: 2500, r: 40 }];
@@ -16,7 +16,7 @@ export default function PagePartenaire() {
   return (
     <main className="page">
       <div className="plank"><div className="plank-b"><span className="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12l4-4 4 2 3-2 7 5-4 4M7 8l-4 8 3 3M11 10l-2 3a1.6 1.6 0 0 0 2.6 1.8L14 12l3.5 3M10 17l1.5 1.5M12.5 15.5l2 2" /></svg></span><div className="pk-t"><h1>Nos offres Partenaires</h1><p>Associez votre entreprise à un événement festif, convivial et populaire</p></div></div><span className="pk-lant" aria-hidden="true"></span></div><section id="offres" className="bande"><div className="wrap">
-          {VUES_MOIS && <div className="audience carte">{ICONES.vues}<p><b>+{VUES_MOIS} de vues par mois</b>Nos {INVITES.length} créateurs invités présentent le marché et ses partenaires à leur communauté, avant, pendant et après l'événement.</p></div>}
+          {VUES_MOIS && <div className="audience carte">{ICONES.vues}<p><b>+{VUES_MOIS} de vues par mois</b>Nos {CREATEURS} créateurs invités présentent le marché et ses partenaires à leur communauté, avant, pendant et après l'événement.</p></div>}
           <div className="offres-l">
           <article className="ofl">
             <div className="ofl-img"><img src="/img/entree.jpg" alt="" loading="lazy" /></div>
@@ -73,7 +73,7 @@ export default function PagePartenaire() {
             <div className="deux"><label>Entreprise<input id="pa-ent" name="entreprise" autoComplete="organization" /></label><label>Nom<input id="pa-nom" name="nom" autoComplete="name" /></label></div>
             <div className="deux"><label>Téléphone<input id="pa-tel" name="tel" type="tel" inputMode="tel" autoComplete="tel" maxLength={20} placeholder="06 12 34 56 78" /></label><label>E-mail<input id="pa-mail" name="email" type="email" autoComplete="email" /></label></div>
             <label>Salariés à inviter<input id="pa-sal" name="salaries" type="number" min="1" inputMode="numeric" /></label>
-            <label>Offre<select id="pack" name="offre" value={pack} onChange={e => setPack(e.target.value)}><option>Sapin Gourmand</option><option>Étoile de Noël</option><option>Maison du Père Noël</option><option>Partenaire Prestige</option><option>Je ne sais pas encore</option></select></label>
+            <label>Offre<select id="pack" name="offre" value={pack} onChange={e => setPack(e.target.value)}><option value="Sapin Gourmand">Sapin Gourmand · 400 € HT</option><option value="Étoile de Noël">Étoile de Noël · 200 € HT</option><option value="Maison du Père Noël">Maison du Père Noël · 1 200 € HT</option><option value="Partenaire Prestige">Partenaire Prestige · 2 500 € HT</option><option>Je ne sais pas encore</option></select></label>
             <label>Message<textarea id="pa-msg" name="message" placeholder="Votre activité, vos questions…"></textarea></label>
           </Formulaire>
         </div>
