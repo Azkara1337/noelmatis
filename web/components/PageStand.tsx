@@ -87,7 +87,7 @@ export default function PageStand() {
                 <li className="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M8 12.3l2.7 2.7L16 9.6" /></svg><span><b><span id="nlib">{libres.length}</span> emplacements à pourvoir</b></span></li>
                 <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="8" rx="1.5" /><path d="M7 8v3M11 8v4M15 8v3M19 8v4" /></svg><span><b>Dimensions :</b> 3 × 3 m, tonnelle décorée</span></li>
                 <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 3v5M15 3v5M6.5 8h11v3a5.5 5.5 0 0 1-11 0zM12 16.5V21" /></svg><span><b>Électricité</b> sur demande</span></li>
-                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M15.5 8.6A4.2 4.2 0 0 0 9 12a4.2 4.2 0 0 0 6.5 3.4M7.5 10.6h5M7.5 13.4h5" /></svg><span><b>Tarif :</b> à partir de 120 € HT pour les 2 jours</span></li>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M15.5 8.6A4.2 4.2 0 0 0 9 12a4.2 4.2 0 0 0 6.5 3.4M7.5 10.6h5M7.5 13.4h5" /></svg><span><b>Tarif :</b> à partir de 120 € HT pour les 3 jours</span></li>
               </ul>
               <p className="xdeja">Déjà là</p><div className="chips" id="chips">{Object.values(pris).map((n, i) => <span key={i} className="chip">{n}</span>)}</div>
             </div>
@@ -95,35 +95,35 @@ export default function PageStand() {
         </div>
 
 
-        <div className="xrubanw"><div className="xruban"><b>Nos emplacements et tarifs</b><span>Location de stand pour les 2 jours (18 et 19 décembre)</span></div></div>
+        <div className="xrubanw"><div className="xruban"><b>Nos emplacements et tarifs</b><span>Location de stand pour les 3 jours (18, 19 et 20 décembre)</span></div></div>
         <div className="xcards">
             <article className="xc">
               <div className="xc-img"><img src="/img/x_art.jpg" alt="" loading="lazy" /><span className="xc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="8.5" width="17" height="4" rx="1" /><path d="M5 12.5V20h14v-7.5M12 8.5V20M12 8.5c-1.5-3-5-3.5-5-1.2C7 8.5 9.5 8.5 12 8.5zm0 0c1.5-3 5-3.5 5-1.2 0 1.2-2.5 1.2-5 1.2z" /></svg></span></div>
-              <div className="xc-b"><h3>Artisan & Créateur</h3><p>Créations artisanales, bijoux, déco, cadeaux, fait main…</p><div className="xc-prix"><b>120 €</b><small>HT</small><span>les 2 jours</span></div>
+              <div className="xc-b"><h3>Artisan & Créateur</h3><p>Créations artisanales, bijoux, déco, cadeaux, fait main…</p><div className="xc-prix"><b>120 €</b><small>HT</small><span>les 3 jours</span></div>
               <ul><li>Emplacement 3 × 3 m</li><li>Accès au site sécurisé</li><li>Visibilité sur nos réseaux</li></ul>
               <a className="btn" href="#fexpo" onClick={() => setCat("Artisanat, créations")}>Réserver</a></div>
             </article>
             <article className="xc">
               <div className="xc-img"><img src="/img/x_prod.jpg" alt="" loading="lazy" /><span className="xc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3.5 10h17l-1.6 9.2a1 1 0 0 1-1 .8H6.1a1 1 0 0 1-1-.8zM8 10l3-6M16 10l-3-6M9 13.5v3.5M12 13.5v3.5M15 13.5v3.5" /></svg></span></div>
-              <div className="xc-b"><h3>Producteur & Terroir</h3><p>Produits locaux, fromages, charcuterie, miel, confitures…</p><div className="xc-prix"><b>180 €</b><small>HT</small><span>les 2 jours</span></div>
+              <div className="xc-b"><h3>Producteur & Terroir</h3><p>Produits locaux, fromages, charcuterie, miel, confitures…</p><div className="xc-prix"><b>180 €</b><small>HT</small><span>les 3 jours</span></div>
               <ul><li>Emplacement 3 × 3 m</li><li>Accès au site sécurisé</li><li>Visibilité renforcée (photos et stories)</li></ul>
               <a className="btn" href="#fexpo" onClick={() => setCat("Producteur, terroir")}>Réserver</a></div>
             </article>
             <article className="xc">
               <div className="xc-img"><img src="/img/x_snack.jpg" alt="" loading="lazy" /><span className="xc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4.5 10h12v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4zM16.5 11.5h1.5a2 2 0 0 1 0 4h-1.7M8 3.5c-.8 1 .8 2 0 3M11.5 3.5c-.8 1 .8 2 0 3" /></svg></span></div>
-              <div className="xc-b"><h3>Snacking & Gourmandises</h3><p>Crêpes, gaufres, churros, boissons chaudes, confiseries…</p><div className="xc-prix"><b>280 €</b><small>HT</small><span>les 2 jours</span></div>
+              <div className="xc-b"><h3>Snacking & Gourmandises</h3><p>Crêpes, gaufres, churros, boissons chaudes, confiseries…</p><div className="xc-prix"><b>280 €</b><small>HT</small><span>les 3 jours</span></div>
               <ul><li>Emplacement 3 × 3 m</li><li>Accès électrique</li><li>Visibilité renforcée sur nos réseaux</li></ul>
               <a className="btn" href="#fexpo" onClick={() => setCat("Snacking, gourmandises")}>Réserver</a></div>
             </article>
             <article className="xc">
               <div className="xc-img"><img src="/img/x_resto.jpg" alt="" loading="lazy" /><span className="xc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 3v7a2 2 0 0 0 2 2v9M11 3v7a2 2 0 0 1-2 2M9 3v6M16.5 21V3c-2 1.5-3 4-3 7v3h3" /></svg></span></div>
-              <div className="xc-b"><h3>Restauration & Spécialités</h3><p>Aligot, raclette, grillades, cochon de lait, plats régionaux…</p><div className="xc-prix"><b>420 €</b><small>HT</small><span>les 2 jours</span></div>
+              <div className="xc-b"><h3>Restauration & Spécialités</h3><p>Aligot, raclette, grillades, cochon de lait, plats régionaux…</p><div className="xc-prix"><b>420 €</b><small>HT</small><span>les 3 jours</span></div>
               <ul><li>Emplacement 3 × 3 m</li><li>Accès électrique renforcé</li><li>Mis en avant dans le programme</li><li>Visibilité sur nos réseaux</li></ul>
               <a className="btn" href="#fexpo" onClick={() => setCat("Restauration, spécialités")}>Réserver</a></div>
             </article>
             <article className="xc">
               <div className="xc-img"><img src="/img/x_prem.jpg" alt="" loading="lazy" /><span className="xc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 21c-3.6 0-6-2.4-6-5.6 0-3.4 2.6-5 3.6-8.4 1.9 1.3 2.6 3 2.6 4.6 1-.6 1.6-1.6 1.8-2.8 1.9 1.6 4 3.8 4 6.6 0 3.2-2.4 5.6-6 5.6z" /></svg></span></div>
-              <div className="xc-b"><h3>Stand Premium & Brasero</h3><p>Concept gourmand, bar, grande restauration, animations…</p><div className="xc-prix"><b>590 €</b><small>HT</small><span>les 2 jours</span></div>
+              <div className="xc-b"><h3>Stand Premium & Brasero</h3><p>Concept gourmand, bar, grande restauration, animations…</p><div className="xc-prix"><b>590 €</b><small>HT</small><span>les 3 jours</span></div>
               <ul><li>Emplacement 3 × 3 m</li><li>Accès électrique renforcé</li><li>Intégration dans un Reel dédié, avec les invités</li><li>Mise en avant prioritaire</li></ul>
               <a className="btn" href="#fexpo" onClick={() => setCat("Stand Premium, brasero")}>Réserver</a></div>
             </article>

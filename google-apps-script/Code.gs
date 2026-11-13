@@ -29,7 +29,7 @@
 // ===== à remplir =====
 const NOTIFIER = 'saveyourshoot@gmail.com';   // adresses qui reçoivent chaque demande, séparées par une virgule.
 const NOM_EVENT = 'Marché de Noël';
-const DATES = 'vendredi 18 et samedi 19 décembre 2026';
+const DATES = 'vendredi 18, samedi 19 et dimanche 20 décembre 2026';
 const TELEPHONE = '05 34 03 24 40';
 const STANDS_DEJA = {7: 'Crêpes', 11: 'Churros', 24: 'Aligot', 25: 'Brasero', 26: 'Vin chaud', 27: 'Raclette'};
 // =====================

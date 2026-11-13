@@ -1,7 +1,7 @@
 # Site du Marché de Noël — contexte pour Claude Code
 
 ## Le projet
-Site d'un marché de Noël, **vendredi 18 et samedi 19 décembre 2026**. 30 stands : 6 sont déjà pris, 24 sont à pourvoir.
+Site du Marché de Noël des Artisans & Commerçants, **vendredi 18, samedi 19 et dimanche 20 décembre 2026** (vendredi 14 h-20 h, samedi 10 h-20 h, dimanche 10 h-18 h). 30 stands : 6 sont déjà pris, 24 sont à pourvoir.
 - Matis (SAVE, vidéaste) gère le site pour l'organisation. Le contact côté organisation est Bertrand.
 - Réponds à Matis en français, en le tutoyant, directement, et termine par les actions à faire.
 
@@ -10,7 +10,7 @@ Site d'un marché de Noël, **vendredi 18 et samedi 19 décembre 2026**. 30 stan
 - `web/app/` : une route par page (`/`, `/programme`, `/stand`, `/repas`, `/invites`, `/partenaire`, `/mur`, `/visite`, `/infos`). `layout.tsx` = en-tête, menu, pied de page et mentions légales. `globals.css` = le CSS d'origine, inchangé.
 - `web/components/` : les parties interactives (`PageStand` = plan cliquable + formulaire exposant, `PagePartenaire`, `ReservationRepas`, `Formulaire` = envoi vers le Sheet, `Entete` = menu, `Visite3D`).
 - `web/lib/plan.ts` : positions des 30 stands et des zones sur `plan.jpg`.
-- `web/public/img/` : les photos (`invites/` pour les invités). `web/public/visite3d.html` : la visite 3D (three.js), chargée en iframe sur `/visite`.
+- `web/public/img/` : les photos (`invites/` pour les invités). `web/public/visite3d/index.html` : la visite 3D (three.js), chargée en iframe sur `/visite`.
 - `google-apps-script/Code.gs` : à coller dans Apps Script, dans le Google Sheet des réservations. Il reçoit les formulaires (doPost), sert le statut des stands (doGet ?action=plan) et envoie les e-mails.
 - `assets/` : photos originales en pleine qualité (le site utilise les copies de `web/public/img/`). `maquettes/` : maquettes JPG du client, référence de style. Aucun des deux n'est utilisé par le build.
 - `MISE_EN_LIGNE.md` : la procédure complète. Lis-la avant d'agir.
@@ -37,9 +37,9 @@ Les étiquettes `<span className="tbc">…</span>` signalent les infos à confir
 ## Règles à respecter
 - **Aucune marque d'entreprise sur l'événement :** jamais « RC IMMO » ni « BATICLICK » (c'est « l'événement de tout le monde »). Seule exception : RC IMMO apparaît dans les pages légales (`/mentions-legales`, `/confidentialite`, `/cgu`) parce que c'est l'organisateur, et la loi impose de le nommer.
 - **Paiements :** le site ne gère aucun paiement. Chaque demande arrive dans le Google Sheet, avec une notification par e-mail, et la secrétaire envoie la facture (paiement par virement). Pas de Stripe.
-- **Dates :** 18 et 19 décembre 2026. Ne les change pas sans un message explicite de Matis.
+- **Dates :** du 18 au 20 décembre 2026 (dimanche ajouté par l'organisation le 12/11). Ne les change pas sans un message explicite de Matis.
 - **Stands :** l'exposant indique un stand souhaité, et l'organisation le confirme par téléphone. Le texte ne doit jamais dire que le stand est réservé dès l'envoi du formulaire.
-- **Chiffres :** n'invente aucun chiffre (audience, fréquentation). S'il n'a pas de source, retire-le.
+- **Chiffres :** n'invente aucun chiffre (audience, fréquentation). S'il n'a pas de source, retire-le. Sources actuelles : abonnés relevés sur les profils publics le 12/11/2026 (`INVITES`) ; « +25 millions de vues par mois » donné par l'organisation (`VUES_MOIS`).
 - **Formulaires :**
   - le champ caché `.hp` est un anti-spam, ne le supprime pas ;
   - l'envoi se fait en `fetch(ENDPOINT, {mode:'no-cors', body: JSON})`, sans en-tête personnalisé : c'est voulu, pour qu'Apps Script accepte la requête.
@@ -54,6 +54,7 @@ Les étiquettes `<span className="tbc">…</span>` signalent les infos à confir
 - Ne lance jamais `npm run build` pendant que `npm run dev` tourne : ça casse le serveur de dev (erreur `Cannot find module`). Pour vérifier les types, utilise plutôt `npx tsc --noEmit`.
 
 **Pièges connus :**
+- Vercel publie les fichiers `.html` de `public/` sans l'extension (`/x.html` répond 404, `/x/` répond). Range une page HTML dans un dossier (`public/x/index.html`) et appelle `/x/index.html`.
 - TypeScript doit rester en version 5 (Next 15 ne lit pas TypeScript 7 et ignore alors les alias `@/`).
 - Le cache npm de la machine a des fichiers appartenant à root : lance npm avec `npm_config_cache=$TMPDIR/npm-cache`.
 

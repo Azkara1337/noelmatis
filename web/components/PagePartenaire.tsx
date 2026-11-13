@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import Faq from './Faq';
 import Formulaire from './Formulaire';
-import { PRIX_REPAS } from '@/lib/config';
+import { INVITES, PRIX_REPAS, VUES_MOIS } from '@/lib/config';
+import { ICONES } from './icones';
 
 const OFFRES = [{ n: 'Étoile de Noël', p: 200, r: 3 }, { n: 'Sapin Gourmand', p: 400, r: 6 }, { n: 'Maison du Père Noël', p: 1200, r: 20 }, { n: 'Partenaire Prestige', p: 2500, r: 40 }];
 const fmt = (v: number) => v.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' €';
@@ -15,6 +16,7 @@ export default function PagePartenaire() {
   return (
     <main className="page">
       <div className="plank"><div className="plank-b"><span className="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12l4-4 4 2 3-2 7 5-4 4M7 8l-4 8 3 3M11 10l-2 3a1.6 1.6 0 0 0 2.6 1.8L14 12l3.5 3M10 17l1.5 1.5M12.5 15.5l2 2" /></svg></span><div className="pk-t"><h1>Nos offres Partenaires</h1><p>Associez votre entreprise à un événement festif, convivial et populaire</p></div></div><span className="pk-lant" aria-hidden="true"></span></div><section id="offres" className="bande"><div className="wrap">
+          {VUES_MOIS && <div className="audience carte">{ICONES.vues}<p><b>+{VUES_MOIS} de vues par mois</b>Nos {INVITES.length} créateurs invités présentent le marché et ses partenaires à leur communauté, avant, pendant et après l'événement.</p></div>}
           <div className="offres-l">
           <article className="ofl">
             <div className="ofl-img"><img src="/img/entree.jpg" alt="" loading="lazy" /></div>
@@ -37,7 +39,7 @@ export default function PagePartenaire() {
             <div className="ofl-prix"><span className="pill">2 500 € <small>HT</small></span><div className="ofl-rep"><b>40</b><span>repas offerts</span></div><a className="btn" href="#contact" onClick={() => setPack('Partenaire Prestige')}>Choisir</a></div>
           </article>
         </div>
-        <p className="ht doux">Prix hors taxes, pour les deux jours. 1 repas offert = 1 ticket, valable le vendredi soir ou le samedi dans les stands de restauration du marché (valeur {fmt(PRIX_REPAS)} TTC).</p>
+        <p className="ht doux">Prix hors taxes, pour les 3 jours. 1 repas offert = 1 ticket, valable pendant les 3 jours dans les stands de restauration du marché (valeur {fmt(PRIX_REPAS)} TTC).</p>
 
         <div className="calc" id="calcul" style={{marginTop:'48px'}}>
           <div>
@@ -54,7 +56,7 @@ export default function PagePartenaire() {
             <h3 style={{fontSize:'26px',marginBottom:'12px'}}>Questions des entreprises</h3>
             <Faq q="Est-ce déductible pour mon entreprise ?" ouvert>Il s'agit de parrainage : une dépense de publicité avec une contrepartie (logo, vidéo, mise en avant). Ce type de dépense est en principe déductible du résultat de l'entreprise. Faites valider votre cas par votre expert-comptable.</Faq>
             <Faq q="Quand sont faites les vidéos ?">La vidéo dédiée est tournée avant le marché, chez vous, en une heure environ. Les photos et le film sont faits pendant le marché.</Faq>
-            <Faq q="Comment fonctionnent les repas ?">Vous recevez un ticket par repas offert, à distribuer à vos salariés. 1 ticket = 1 portion, dans n'importe quel stand de restauration du marché, le vendredi soir ou le samedi.</Faq>
+            <Faq q="Comment fonctionnent les repas ?">Vous recevez un ticket par repas offert, à distribuer à vos salariés. 1 ticket = 1 portion, dans n'importe quel stand de restauration du marché, pendant les 3 jours.</Faq>
             <Faq q="Quand envoyer mon logo ?">Avant le 1er décembre, pour l'impression du mur et des panneaux.</Faq>
           </div>
           <Formulaire

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { ICONES } from '@/components/icones';
-import { INVITES, type Invite, type Reseau as ReseauT } from '@/lib/config';
+import { INVITES, VUES_MOIS, type Invite, type Reseau as ReseauT } from '@/lib/config';
 
 export const metadata: Metadata = { title: 'Invités' };
 
@@ -12,14 +12,16 @@ function Reseau({ k, r }: { k: 'ig' | 'tk' | 'yt'; r?: ReseauT }) {
 
 function CarteInvite({ v }: { v: Invite }) {
   const lien = v.ig?.url || v.tk?.url || v.yt?.url || '';
+  const reseau = v.ig?.url ? 'Instagram' : v.tk?.url ? 'TikTok' : 'YouTube';
+  const icone = v.ig?.url ? ICONES.ig : v.tk?.url ? ICONES.tk : ICONES.yt;
   const reseaux = [v.ig, v.tk, v.yt].some(r => r && r.n);
   return (
     <article className={'inv-c' + (v.roi ? ' roi' : '') + (v.detour ? ' detoure' : '')}>
       {v.detour
         ? <div className="inv-ph"><img className="detoure-img" src={v.detour} alt={v.nom} /></div>
         : <div className="inv-ph">{v.photo ? <img src={v.photo} alt={v.nom} loading="lazy" /> : <div className="vide">{ICONES.user}Photo à venir</div>}</div>}
-      <div className="inv-nom"><h3>{v.nom}</h3>{lien && <a href={lien} target="_blank" rel="noopener" aria-label="Voir son compte">{ICONES.play}</a>}</div>
-      <div className="inv-b"><p>{v.desc}</p>{reseaux && <div className="inv-rs"><Reseau k="ig" r={v.ig} /><Reseau k="tk" r={v.tk} /><Reseau k="yt" r={v.yt} /></div>}</div>
+      <div className="inv-nom"><h3>{v.nom}</h3>{lien && <a href={lien} target="_blank" rel="noopener" aria-label={'Voir sur ' + reseau}>{ICONES.play}</a>}</div>
+      <div className="inv-b"><p>{v.desc}</p>{reseaux && <div className="inv-rs"><Reseau k="ig" r={v.ig} /><Reseau k="tk" r={v.tk} /><Reseau k="yt" r={v.yt} /></div>}{lien && <a className="inv-lien" href={lien} target="_blank" rel="noopener">{icone}Voir sur {reseau}{ICONES.fleche}</a>}</div>
     </article>
   );
 }
@@ -31,6 +33,7 @@ export default function Invites() {
         <p className="tag-r">Des créateurs de contenu, artisans, passionnés et amoureux du terroir qui quittent les écrans pour venir à votre rencontre !</p>
         <div className="st4 carte" id="invstats">
         <div>{ICONES.users}<span><b>{INVITES.length}</b>créateurs présents</span></div>
+        {VUES_MOIS && <div>{ICONES.vues}<span><b>+{VUES_MOIS}</b>de vues par mois, à eux tous</span></div>}
         <div>{ICONES.handheart}<span>Des rencontres vraies<br />et authentiques !</span></div>
       </div>
         <div className={'inv-g' + (INVITES.some(v => v.roi) ? ' autour' : '')} id="invg">

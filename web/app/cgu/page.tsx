@@ -10,7 +10,7 @@ export default function Cgu() {
   return (
     <PageLegale titre="Conditions générales" sous="Utilisation du site et réservations">
       <h2>1. Objet</h2>
-      <p>Ces conditions encadrent l'utilisation du site du Marché de Noël des vendredi 18 et samedi 19 décembre 2026, organisé par <Champ v={ORGANISATEUR.nom} />, et les demandes envoyées depuis le site : stands, repas et partenariats. Envoyer un formulaire vaut acceptation de ces conditions.</p>
+      <p>Ces conditions encadrent l'utilisation du site du Marché de Noël des vendredi 18, samedi 19 et dimanche 20 décembre 2026, organisé par <Champ v={ORGANISATEUR.nom} />, et les demandes envoyées depuis le site : stands, repas et partenariats. Envoyer un formulaire vaut acceptation de ces conditions.</p>
 
       <h2>2. Utilisation du site</h2>
       <p>Le site est gratuit et accessible à tous. Vous vous engagez à donner des informations exactes dans les formulaires et à ne pas envoyer de fausses demandes. L'organisateur peut ignorer toute demande abusive.</p>
@@ -19,7 +19,7 @@ export default function Cgu() {
       <ul>
         <li>Le formulaire est une <b>demande</b> : il ne réserve pas le stand. L'organisation vous rappelle pour confirmer l'emplacement, puis vous envoie la facture : le stand n'est réservé qu'à réception du paiement.</li>
         <li>Le stand choisi sur le plan est un souhait. L'organisation peut proposer un autre emplacement selon les disponibilités et l'équilibre du marché.</li>
-        <li>Les prix affichés sont hors taxes, pour les deux jours.</li>
+        <li>Les prix affichés sont hors taxes, pour les 3 jours.</li>
         <li><b>Paiement :</b> <Champ v={c.paiementStand} /></li>
         <li><b>Annulation par l'exposant :</b> <Champ v={c.annulationStand} /></li>
         <li>L'exposant reste responsable de son matériel, de ses produits et du respect des règles d'hygiène et de sécurité qui s'appliquent à son activité.</li>
@@ -27,7 +27,7 @@ export default function Cgu() {
 
       <h2>4. Repas</h2>
       <ul>
-        <li>Prix : {PRIX_REPAS} € TTC le repas. 1 ticket = 1 portion, à échanger dans les stands de restauration du marché, le vendredi soir ou le samedi.</li>
+        <li>Prix : {PRIX_REPAS} € TTC le repas. 1 ticket = 1 portion, à échanger dans les stands de restauration du marché, pendant les 3 jours.</li>
         <li><b>Paiement et retrait :</b> {PAIEMENT}</li>
         <li><b>Annulation :</b> <Champ v={c.annulationRepas} /></li>
         <li>Les repas étant servis à une date déterminée, il n'y a pas de droit de rétractation (article L221-28 du Code de la consommation).</li>

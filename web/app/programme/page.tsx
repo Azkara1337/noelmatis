@@ -10,7 +10,7 @@ export default function Programme() {
           <h2 className="prog-h">Un programme exceptionnel vous attend !</h2>
           <div className="ruban"><span>Le programme complet sera dévoilé <b>15 jours</b> avant l'événement !</span></div>
           <p className="prog-list">Spectacles, animations, rencontres, démonstrations, invités surprises, défis, jeux, dégustations, moments d'exception…</p>
-          <p className="prog-script">Préparez-vous à vivre 2 jours de magie, de partage et d'émotions !</p>
+          <p className="prog-script">Préparez-vous à vivre 3 jours de magie, de partage et d'émotions !</p>
           <div className="prog-stage">
             <div className="pola-col l"><figure className="pola"><img src="/img/x_prem.jpg" alt="Grillades au brasero" loading="lazy" /></figure><figure className="pola"><img src="/img/resto.jpg" alt="Aligot servi au stand" loading="lazy" /></figure><figure className="pola"><img src="/img/arti.jpg" alt="Stand d'artisanat" loading="lazy" /></figure></div>
             <img className="chest" src="/img/d_chest.webp" alt="Un coffre au trésor qui s'ouvre" />
