@@ -61,7 +61,7 @@ export default function PagePartenaire() {
           </div>
           <Formulaire
             id="contact" type="partenaire"
-            champs={['entreprise', 'nom', 'tel', 'email', 'salaries', 'offre', 'message']}
+            champs={['entreprise', 'nom', 'tel', 'email', 'salaries', 'offre', 'code_promo', 'message']}
             requis={['entreprise', 'tel']}
             erreur="Indiquez au moins le nom de l'entreprise et un téléphone."
             titreMerci="Demande prête"
@@ -74,6 +74,7 @@ export default function PagePartenaire() {
             <div className="deux"><label>Téléphone<input id="pa-tel" name="tel" type="tel" inputMode="tel" autoComplete="tel" maxLength={20} placeholder="06 12 34 56 78" /></label><label>E-mail<input id="pa-mail" name="email" type="email" autoComplete="email" /></label></div>
             <label>Salariés à inviter<input id="pa-sal" name="salaries" type="number" min="1" inputMode="numeric" /></label>
             <label>Offre<select id="pack" name="offre" value={pack} onChange={e => setPack(e.target.value)}><option value="Sapin Gourmand">Sapin Gourmand · 400 € HT</option><option value="Étoile de Noël">Étoile de Noël · 200 € HT</option><option value="Maison du Père Noël">Maison du Père Noël · 1 200 € HT</option><option value="Partenaire Prestige">Partenaire Prestige · 2 500 € HT</option><option>Je ne sais pas encore</option></select></label>
+            <label><span>Code promo <small className="facultatif">(facultatif)</small></span><input name="code_promo" autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={30} placeholder="Ex. NOEL2026" /></label>
             <label>Message<textarea id="pa-msg" name="message" placeholder="Votre activité, vos questions…"></textarea></label>
           </Formulaire>
         </div>

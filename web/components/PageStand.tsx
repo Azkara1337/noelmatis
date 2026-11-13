@@ -137,7 +137,7 @@ export default function PageStand() {
 
         <Formulaire
           id="fexpo" className="xform" type="stand"
-          champs={['nom', 'activite', 'tel', 'email', 'stand', 'categorie', 'message']}
+          champs={['nom', 'activite', 'tel', 'email', 'stand', 'categorie', 'code_promo', 'message']}
           requis={['nom', 'tel']}
           erreur="Indiquez votre nom et votre téléphone."
           titreMerci="C'est noté"
@@ -151,6 +151,7 @@ export default function PageStand() {
           <div className="deux"><label>Téléphone<input id="ex-tel" name="tel" type="tel" inputMode="tel" autoComplete="tel" maxLength={20} placeholder="06 12 34 56 78" /></label><label>E-mail<input id="ex-mail" name="email" type="email" autoComplete="email" /></label></div>
           <label>Stand souhaité<select id="ex-stand" name="stand" value={standOk} onChange={e => setStand(e.target.value)}><option value="">Pas de préférence</option>{libres.map(n => <option key={n} value={String(n)}>Stand {n}</option>)}</select></label>
           <label>Catégorie<select id="ex-cat" name="categorie" value={cat} onChange={e => setCat(e.target.value)}><option value="Artisanat, créations">Artisanat, créations · 120 € HT</option><option value="Producteur, terroir">Producteur, terroir · 180 € HT</option><option value="Snacking, gourmandises">Snacking, gourmandises · 280 € HT</option><option value="Restauration, spécialités">Restauration, spécialités · 420 € HT</option><option value="Stand Premium, brasero">Stand Premium, brasero · 590 € HT</option><option>Je ne sais pas encore</option></select></label>
+          <label><span>Code promo <small className="facultatif">(facultatif)</small></span><input name="code_promo" autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={30} placeholder="Ex. NOEL2026" /></label>
           <label>En une phrase<textarea id="ex-msg" name="message" placeholder="Bougies, couronnes, confitures…"></textarea></label>
         </Formulaire>
         <div className="lb" id="lb" hidden={!grand} onClick={() => setGrand(false)}><img id="lbi" src="/img/plan.jpg" alt="Plan du marché en grand" /></div>

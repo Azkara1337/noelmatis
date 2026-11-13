@@ -35,9 +35,9 @@ const STANDS_DEJA = {7: 'Crêpes', 11: 'Churros', 24: 'Aligot', 25: 'Brasero', 2
 // =====================
 
 const ONGLETS = {
-  stand: {nom: 'Stands', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['nom', 'Nom'], ['activite', 'Activité'], ['tel', 'Téléphone'], ['email', 'E-mail'], ['stand', 'Stand souhaité'], ['categorie', 'Catégorie'], ['message', 'Message']]},
-  repas: {nom: 'Repas', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['nom', 'Nom'], ['email', 'E-mail'], ['tel', 'Téléphone'], ['profil', 'Profil'], ['repas', 'Nb repas'], ['total_ttc', 'Total TTC']]},
-  partenaire: {nom: 'Partenaires', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['entreprise', 'Entreprise'], ['nom', 'Contact'], ['tel', 'Téléphone'], ['email', 'E-mail'], ['salaries', 'Salariés'], ['offre', 'Offre'], ['message', 'Message']]}
+  stand: {nom: 'Stands', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['nom', 'Nom'], ['activite', 'Activité'], ['tel', 'Téléphone'], ['email', 'E-mail'], ['stand', 'Stand souhaité'], ['categorie', 'Catégorie'], ['message', 'Message'], ['code_promo', 'Code promo']]},
+  repas: {nom: 'Repas', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['nom', 'Nom'], ['email', 'E-mail'], ['tel', 'Téléphone'], ['profil', 'Profil'], ['repas', 'Nb repas'], ['total_ttc', 'Total TTC'], ['code_promo', 'Code promo']]},
+  partenaire: {nom: 'Partenaires', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['entreprise', 'Entreprise'], ['nom', 'Contact'], ['tel', 'Téléphone'], ['email', 'E-mail'], ['salaries', 'Salariés'], ['offre', 'Offre'], ['message', 'Message'], ['code_promo', 'Code promo']]}
 };
 
 function installer() {
@@ -156,11 +156,17 @@ function doPost(e) {
     }
     if (['nom', 'activite', 'entreprise'].some(function (k) { return d[k] && !NOM_RE.test(String(d[k])); })) return json({ok: false, erreur: 'nom invalide'});
     if (d.salaries && !/^\d{1,4}$/.test(String(d.salaries))) return json({ok: false, erreur: 'salariés invalide'});
+    if (d.code_promo) {
+      d.code_promo = String(d.code_promo).replace(/\s+/g, '').toUpperCase();
+      if (!/^[A-Z0-9_-]{1,30}$/.test(d.code_promo)) return json({ok: false, erreur: 'code promo invalide'});
+    }
     if (!quota()) return json({ok: false, erreur: 'trop de demandes'});
     d.date = Utilities.formatDate(new Date(), 'Europe/Paris', 'dd/MM/yyyy HH:mm');
     d.statut = 'À traiter';
     const ligne = o.cols.map(function (c) { return propre(d[c[0]]); });
-    SpreadsheetApp.getActiveSpreadsheet().getSheetByName(o.nom).appendRow(ligne);
+    const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(o.nom);
+    entetes(sh, o);
+    sh.appendRow(ligne);
   } catch (err) {
     return json({ok: false, erreur: String(err)});
   } finally {
@@ -170,6 +176,14 @@ function doPost(e) {
   try { prevenir(d, o); } catch (err) { console.error('prevenir', err); }
   try { confirmer(d); } catch (err) { console.error('confirmer', err); }
   return json({ok: true});
+}
+
+// Ajoute les titres des colonnes créées après l'installation (ex. « Code promo »), sans toucher aux lignes existantes.
+function entetes(sh, o) {
+  const n = sh.getLastColumn();
+  if (n >= o.cols.length) return;
+  const titres = o.cols.slice(n).map(function (c) { return c[1]; });
+  sh.getRange(1, n + 1, 1, titres.length).setValues([titres]).setFontWeight('bold').setBackground('#d63f2b').setFontColor('#ffffff');
 }
 
 // Compteur par heure (CacheService) : limite le nombre de demandes acceptées.

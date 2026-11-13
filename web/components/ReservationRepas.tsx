@@ -23,7 +23,7 @@ export default function ReservationRepas() {
       </div>
       <Formulaire
         id="frepas" type="repas"
-        champs={['nom', 'email', 'tel', 'profil', 'repas', 'total_ttc']}
+        champs={['nom', 'email', 'tel', 'profil', 'repas', 'total_ttc', 'code_promo']}
         requis={['nom', 'email']}
         erreur="Indiquez votre nom et votre e-mail."
         titreMerci="Demande envoyée"
@@ -35,6 +35,7 @@ export default function ReservationRepas() {
         <div className="deux"><label>Nom<input id="re-nom" name="nom" autoComplete="name" /></label><label>E-mail<input id="re-mail" name="email" type="email" autoComplete="email" /></label></div>
         <label>Téléphone<input id="re-tel" name="tel" type="tel" inputMode="tel" autoComplete="tel" maxLength={20} placeholder="06 12 34 56 78" /></label>
         <label>Je réserve en tant que<select id="re-type" name="profil"><option>Particulier</option><option>Entreprise (facture)</option></select></label>
+        <label><span>Code promo <small className="facultatif">(facultatif)</small></span><input name="code_promo" autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={30} placeholder="Ex. NOEL2026" /></label>
         <input type="hidden" name="repas" value={String(n)} />
         <input type="hidden" name="total_ttc" value={total} />
       </Formulaire>

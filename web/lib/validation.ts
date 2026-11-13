@@ -8,7 +8,10 @@ export const MAIL_RE = /^[^\s@<>"'`]+@[^\s@<>"'`]+\.[a-z]{2,}$/i;
 /** Noms (personne, activité, entreprise) : lettres (accents compris), chiffres et ponctuation courante. */
 export const NOM_RE = /^[\p{L}\p{M}0-9 '’.,&()\/+-]+$/u;
 
-const LONGUEUR: Record<string, number> = { message: 1000, nom: 80, activite: 80, entreprise: 80, email: 120, tel: 20 };
+/** Code promo : lettres, chiffres, tiret et tiret bas, 30 caractères au plus. */
+export const CODE_RE = /^[A-Z0-9_-]{1,30}$/;
+
+const LONGUEUR: Record<string, number> = { code_promo: 30, message: 1000, nom: 80, activite: 80, entreprise: 80, email: 120, tel: 20 };
 const NOMS = ['nom', 'activite', 'entreprise'];
 
 /** Pendant la saisie du téléphone : ne garde que les chiffres, les espaces et un « + » au début. */
@@ -38,5 +41,9 @@ export function verifier(v: Record<string, string>): string | null {
     if (v[k] && !NOM_RE.test(v[k])) return 'Le nom contient des caractères non autorisés.';
   }
   if (v.salaries && !/^\d{1,4}$/.test(v.salaries)) return 'Le nombre de salariés doit être un nombre.';
+  if (v.code_promo) {
+    v.code_promo = v.code_promo.replace(/\s+/g, '').toUpperCase();
+    if (!CODE_RE.test(v.code_promo)) return 'Code promo invalide : lettres, chiffres et tirets uniquement.';
+  }
   return null;
 }
