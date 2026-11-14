@@ -66,5 +66,5 @@ export const INVITES: Invite[] = [
   { nom: 'Le Charbonheur', desc: 'Artisan, rénovation et investissement immobilier', photo: '/img/invites/charbonheur.webp', detour: '/img/invites/detour/charbonheur.webp', ig: { n: "41 k", url: "https://www.instagram.com/le_charbonheur/" } },
   { nom: 'Terre Gauloise', desc: 'Paysages, terroir et patrimoine français', photo: '/img/invites/terre-gauloise.webp', ig: { n: "55 k", url: "https://www.instagram.com/terre.gauloise/" }, tk: { n: "13,4 k", url: "https://www.tiktok.com/@terre.gauloise" } },
   { nom: 'Damien', desc: 'Créateur de contenu', photo: '' },
-  { nom: 'Baptiste', desc: 'Créateur de contenu', photo: '' },
+  { nom: 'Baptiste', desc: 'Boucher · Boucherie Labourde · Lifestyle', photo: '', ig: { n: '212 k', url: 'https://www.instagram.com/b_labourde/' }, tk: { n: '536 k', url: 'https://www.tiktok.com/@b_labourde' } },
 ];
