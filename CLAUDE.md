@@ -14,6 +14,8 @@ Site du Marché de Noël des Artisans & Commerçants, **vendredi 18, samedi 19 e
 - `google-apps-script/Code.gs` : à coller dans Apps Script, dans le Google Sheet des réservations. Il reçoit les formulaires (doPost), sert le statut des stands (doGet ?action=plan) et envoie les e-mails.
 - `assets/` : photos originales en pleine qualité (le site utilise les copies de `web/public/img/`). `maquettes/` : maquettes JPG du client, référence de style. Aucun des deux n'est utilisé par le build.
 - `MISE_EN_LIGNE.md` : la procédure complète. Lis-la avant d'agir.
+- `web/components/Invites.tsx` : page Invités (carte de l'hôte + grille compacte) et bandeau qui défile sur l'accueil. Photos : `public/img/invites/profils/` (photos de profil Instagram 150 px, en avatars), `detour/` (détourages HD agrandis avec Artlist, originaux dans `assets/invites/hd/`).
+- `web/components/ProgrammeCompteur.tsx` : compte à rebours jusqu'à `PROGRAMME_REVELE` (3/12 9 h), puis le programme jour par jour (`PROGRAMME` dans config.ts).
 
 ## Réglages (`web/lib/config.ts`)
 ```ts
@@ -39,7 +41,7 @@ Les étiquettes `<span className="tbc">…</span>` signalent les infos à confir
 - **Paiements :** le site ne gère aucun paiement. Chaque demande arrive dans le Google Sheet, avec une notification par e-mail, et la secrétaire envoie la facture (paiement par virement). Pas de Stripe.
 - **Dates :** du 18 au 20 décembre 2026 (dimanche ajouté par l'organisation le 12/11). Ne les change pas sans un message explicite de Matis.
 - **Stands :** l'exposant indique un stand souhaité, et l'organisation le confirme par téléphone. Le texte ne doit jamais dire que le stand est réservé dès l'envoi du formulaire.
-- **Chiffres :** n'invente aucun chiffre (audience, fréquentation). S'il n'a pas de source, retire-le. Sources actuelles : abonnés relevés sur les profils publics le 12/11/2026 (`INVITES`) ; « +200 millions de vues par mois » et « +15 créateurs » donnés par l'organisation le 17/11 (`VUES_MOIS`, `CREATEURS`).
+- **Chiffres :** n'invente aucun chiffre (audience, fréquentation). S'il n'a pas de source, retire-le. Sources actuelles : abonnés des invités donnés par l'organisation (document « Les influenceurs attendus », 17/11/2026), vérifiés sur les profils publics (`INVITES`) ; « +200 millions de vues par mois » et « +15 créateurs » donnés par l'organisation le 17/11 (`VUES_MOIS`, `CREATEURS`).
 - **Formulaires :**
   - le champ caché `.hp` est un anti-spam, ne le supprime pas ;
   - l'envoi se fait en `fetch(ENDPOINT, {mode:'no-cors', body: JSON})`, sans en-tête personnalisé : c'est voulu, pour qu'Apps Script accepte la requête.

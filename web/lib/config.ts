@@ -52,19 +52,39 @@ export const PARTENAIRES: Partenaire[] = [
   // { nom: 'Nom de l’entreprise', ville: 'Ville', logo: '/img/logos/nom.png', site: 'https://...' },
 ];
 
-/** Invités : n = nombre d'abonnés affiché, url = lien du compte. Un réseau sans n ne s'affiche pas. */
+/** Invités : n = nombre d'abonnés (chiffres de l'organisation, 17/11/2026), url = lien du compte. Un réseau sans n ne s'affiche pas. */
 export type Reseau = { n: string; url: string };
-export type Invite = { nom: string; desc: string; photo: string; /** Photo détourée (fond transparent) : la tête sort de la carte. */ detour?: string; /** Carte mise en avant au centre (plus grande, bordure dorée). */ roi?: boolean; ig?: Reseau; tk?: Reseau; yt?: Reseau };
+export type Invite = { nom: string; desc: string; photo: string; /** Photo détourée (fond transparent). */ detour?: string; /** Photo de profil (avatar rond). */ avatar?: string; /** Carte mise en avant au centre (plus grande, bordure dorée). */ roi?: boolean; ig?: Reseau; tk?: Reseau; yt?: Reseau };
 /** Audience cumulée des invités, chiffres donnés par l'organisation (17/11/2026). Vide = rien n'est affiché. */
 export const VUES_MOIS = '200 millions';
 /** Nombre de créateurs annoncé (plus que les cartes affichées). Vide = nombre de cartes. */
 export const CREATEURS = '+15';
 export const INVITES: Invite[] = [
-  { nom: 'Bertrand Vettes', desc: 'Investisseur & entrepreneur terrain · Immobilier · BTP · Projets', photo: '/img/invites/bertrand.webp', detour: '/img/invites/detour/bertrand.webp', roi: true, ig: { n: '30 k', url: 'https://www.instagram.com/bertrand_rcimmo/' }, tk: { n: '5,2 k', url: 'https://www.tiktok.com/@bertrand.rcimmo' }, yt: { n: '2,7 k', url: 'https://www.youtube.com/@bertrandrcimmo' } },
-  { nom: 'Ludo & Clémentine', desc: 'Rénovation, auto-rénovation et vie de chantier', photo: '/img/invites/ludo-clementine.webp', detour: '/img/invites/detour/ludo-clementine.webp', ig: { n: "31 k", url: "https://www.instagram.com/ludo_clem_renovation/" } },
-  { nom: 'Florent · Flambadou', desc: 'Traiteur, tournebroche & brasero · Cuisine au feu de bois', photo: '/img/invites/florent.webp', detour: '/img/invites/detour/florent.webp', ig: { n: "37 k", url: "https://www.instagram.com/flambadouu/" }, tk: { n: "3 k", url: "https://www.tiktok.com/@flambadouu" } },
-  { nom: 'Le Charbonheur', desc: 'Artisan, rénovation et investissement immobilier', photo: '/img/invites/charbonheur.webp', detour: '/img/invites/detour/charbonheur.webp', ig: { n: "41 k", url: "https://www.instagram.com/le_charbonheur/" } },
-  { nom: 'Terre Gauloise', desc: 'Paysages, terroir et patrimoine français', photo: '/img/invites/terre-gauloise.webp', ig: { n: "55 k", url: "https://www.instagram.com/terre.gauloise/" }, tk: { n: "13,4 k", url: "https://www.tiktok.com/@terre.gauloise" } },
-  { nom: 'Damien', desc: 'Créateur de contenu', photo: '' },
-  { nom: 'Baptiste', desc: 'Boucher · Boucherie Labourde · Lifestyle', photo: '', ig: { n: '212 k', url: 'https://www.instagram.com/b_labourde/' }, tk: { n: '536 k', url: 'https://www.tiktok.com/@b_labourde' } },
+  { nom: 'Bertrand Vettes', desc: 'Investisseur & entrepreneur terrain · Immobilier · BTP', photo: '/img/invites/bertrand.webp', detour: '/img/invites/detour/bertrand.webp', roi: true, ig: { n: '30 k', url: 'https://www.instagram.com/bertrand_rcimmo/' }, tk: { n: '5,2 k', url: 'https://www.tiktok.com/@bertrand.rcimmo' }, yt: { n: '2,7 k', url: 'https://www.youtube.com/@bertrandrcimmo' } },
+  { nom: 'Les Mémoires de Jean-Louis', desc: 'Récits de campagne', photo: '/img/invites/profils/les-memoires-de-jeanlouis.webp', avatar: '/img/invites/profils/les-memoires-de-jeanlouis.webp', ig: { n: '369 k', url: 'https://www.instagram.com/les_memoires_de_jeanlouis/' } },
+  { nom: 'Baptiste', desc: 'Boucherie', photo: '/img/invites/profils/b-labourde.webp', avatar: '/img/invites/profils/b-labourde.webp', ig: { n: '213 k', url: 'https://www.instagram.com/b_labourde/' }, tk: { n: '536 k', url: 'https://www.tiktok.com/@b_labourde' } },
+  { nom: 'Damien Épicurien', desc: 'Vin · Tradition · Terroir', photo: '/img/invites/profils/damien-epicurien.webp', avatar: '/img/invites/profils/damien-epicurien.webp', ig: { n: '143 k', url: 'https://www.instagram.com/damien_epicurien/' } },
+  { nom: 'Joré Lagon Jardins', desc: 'Piscines lagon & jardins', photo: '/img/invites/profils/jore-lagon-jardins.webp', avatar: '/img/invites/profils/jore-lagon-jardins.webp', ig: { n: '92,8 k', url: 'https://www.instagram.com/jore_lagon_jardins/' } },
+  { nom: 'Domaine di l’Alivi', desc: 'Agriculture · Domaine', photo: '/img/invites/profils/domainedilalivi.webp', avatar: '/img/invites/profils/domainedilalivi.webp', ig: { n: '81,9 k', url: 'https://www.instagram.com/domainedilalivi/' } },
+  { nom: 'Pierre', desc: 'Agriculteur', photo: '/img/invites/profils/pierre-lsk.webp', avatar: '/img/invites/profils/pierre-lsk.webp', ig: { n: '80,5 k', url: 'https://www.instagram.com/pierre.lsk/' } },
+  { nom: 'Mare e Monti', desc: 'Restaurant · Bandol', photo: '/img/invites/profils/mareemonti-bandol.webp', avatar: '/img/invites/profils/mareemonti-bandol.webp', ig: { n: '46,3 k', url: 'https://www.instagram.com/mareemonti_bandol/' } },
+  { nom: 'Le Charbonheur', desc: 'Artisan investisseur', photo: '/img/invites/profils/le-charbonheur.webp', detour: '/img/invites/detour/charbonheur.webp', ig: { n: '42,3 k', url: 'https://www.instagram.com/le_charbonheur/' } },
+  { nom: 'Aladdin Jammal', desc: 'Construction · Bricolage', photo: '/img/invites/profils/aladdin-jammal.webp', avatar: '/img/invites/profils/aladdin-jammal.webp', ig: { n: '37,3 k', url: 'https://www.instagram.com/aladdin.jammal/' } },
+  { nom: 'Florent · Flambadou', desc: 'Traiteur au feu de bois', photo: '/img/invites/profils/flambadouu.webp', avatar: '/img/invites/profils/flambadouu.webp', detour: '/img/invites/detour/florent.webp', ig: { n: '37 k', url: 'https://www.instagram.com/flambadouu/' }, tk: { n: '3 k', url: 'https://www.tiktok.com/@flambadouu' } },
+  { nom: 'LSO Bâti Rénov', desc: 'Maçonnerie · Couverture', photo: '/img/invites/profils/lso-bati-renov.webp', avatar: '/img/invites/profils/lso-bati-renov.webp', ig: { n: '27,1 k', url: 'https://www.instagram.com/lso.bati.renov/' } },
+  { nom: 'Alto’bois', desc: 'Charpente · Couverture', photo: '/img/invites/profils/altobois.webp', avatar: '/img/invites/profils/altobois.webp', ig: { n: '16,8 k', url: 'https://www.instagram.com/altobois/' } },
+  { nom: 'Madame Immo Travaux', desc: 'Immobilier · BTP', photo: '/img/invites/profils/madame-immo-travaux.webp', avatar: '/img/invites/profils/madame-immo-travaux.webp', ig: { n: '16,7 k', url: 'https://www.instagram.com/madame_immo_travaux/' } },
+  { nom: 'Papa Ours', desc: 'Restaurant · Narbonne', photo: '/img/invites/profils/papaoursnarbonne.webp', avatar: '/img/invites/profils/papaoursnarbonne.webp', ig: { n: '14 k', url: 'https://www.instagram.com/papaoursnarbonne/' } },
+  { nom: 'Jetbike Motorcycles', desc: 'Atelier moto', photo: '/img/invites/profils/jetbikemotorcycles.webp', avatar: '/img/invites/profils/jetbikemotorcycles.webp', ig: { n: '5,2 k', url: 'https://www.instagram.com/jetbikemotorcycles/' } },
+  { nom: 'Ludo & Clémentine', desc: 'Rénovation · Vie de chantier', photo: '/img/invites/ludo-clementine.webp', detour: '/img/invites/detour/ludo-clementine.webp', ig: { n: '31 k', url: 'https://www.instagram.com/ludo_clem_renovation/' } },
+  { nom: 'Terre Gauloise', desc: 'Paysages · Terroir · Patrimoine', photo: '/img/invites/terre-gauloise.webp', ig: { n: '55 k', url: 'https://www.instagram.com/terre.gauloise/' }, tk: { n: '13,4 k', url: 'https://www.tiktok.com/@terre.gauloise' } },
 ];
+
+/**
+ * Programme : jusqu'à PROGRAMME_REVELE, la page Programme affiche un compte à rebours.
+ * Ensuite, elle affiche PROGRAMME (s'il est rempli), jour par jour.
+ * Exemple : { jour: 'Vendredi 18 décembre', moments: [{ heure: '14 h', titre: 'Ouverture du marché', lieu: 'Entrée' }] }
+ */
+export const PROGRAMME_REVELE = '2026-12-03T09:00:00+01:00';
+export type Moment = { heure: string; titre: string; lieu?: string };
+export const PROGRAMME: { jour: string; moments: Moment[] }[] = [];
