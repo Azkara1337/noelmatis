@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import GrilleInvites, { StatsInvites } from '@/components/Invites';
+import { DefileInvites, StatsInvites } from '@/components/Invites';
 
 export const metadata: Metadata = { title: { absolute: 'Marché de Noël des Artisans & Commerçants · Pamiers' } };
 
@@ -35,7 +35,7 @@ export default function Accueil() {
         <div className="acc-inv">
           <div className="xrubanw"><div className="xruban"><b>Nos créateurs invités</b></div></div>
           <StatsInvites />
-          <GrilleInvites />
+          <DefileInvites />
           <p className="acc-inv-plus"><Link className="btn plein" href="/invites">Découvrir tous nos invités</Link></p>
         </div>
 

@@ -1,0 +1,96 @@
+MARCHÉ DE NOËL DES ARTISANS & COMMERÇANTS — PAGES LÉGALES DU SITE
+Informations à compléter et à valider
+Site : https://www.noel-rcimmo.fr (pages « Mentions légales », « Données personnelles » et « Conditions générales », en bas de chaque page)
+
+Bonjour,
+
+Le site du marché comporte trois pages légales obligatoires. La plupart des informations sont déjà remplies à partir des registres publics. Il en manque trois, et quelques textes doivent être validés par l'organisateur.
+
+Merci d'écrire vos réponses après chaque « → » et de nous renvoyer ce fichier. Si une information est fausse, corrigez-la directement.
+
+
+========================================================================
+1. INFORMATIONS MANQUANTES (obligatoires)
+========================================================================
+
+a) Capital social de RC IMMO
+   Obligatoire dans les mentions légales pour une société (SAS).
+   Un annuaire d'entreprises indique 1 200 €, mais nous n'avons pas pu le vérifier.
+   →
+
+b) Adresse e-mail de contact
+   Affichée sur le site pour les questions et pour les demandes liées aux données personnelles (RGPD).
+   Il faut une adresse consultée régulièrement : la loi impose de répondre aux demandes sous un mois.
+   →
+
+c) Médiateur de la consommation
+   Obligatoire, car RC IMMO vend des repas à des particuliers.
+   Il s'agit de l'organisme de médiation auquel l'entreprise adhère (nom + site web), par exemple CM2C, Medicys, etc.
+   Si l'entreprise n'a pas encore de médiateur, votre expert-comptable peut vous indiquer lequel choisir.
+   →
+
+
+========================================================================
+2. INFORMATIONS DÉJÀ REMPLIES (à vérifier)
+========================================================================
+
+Organisateur et éditeur du site : RC IMMO
+Forme juridique : Société par actions simplifiée (SAS)
+Siège : 10 B rue Jean Rostand, 09100 Pamiers
+Immatriculation : RCS Foix 892 450 172
+Téléphone : 05 34 03 24 40
+Directeur de la publication : Bertrand Vettes
+Hébergeur du site : Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis
+
+Tout est correct ?  → oui / non (corrections : )
+
+
+========================================================================
+3. CONDITIONS DE RÉSERVATION (à valider)
+========================================================================
+
+Voici ce qui est écrit aujourd'hui sur le site. Répondez « OK » ou corrigez.
+
+Stands
+- Paiement : « En une seule fois, par virement, sur facture envoyée par e-mail après l'appel de l'organisation. L'emplacement est réservé à réception du paiement. »
+  →
+- Annulation par l'exposant : « Aucun remboursement en cas d'annulation par l'exposant. »
+  →
+
+Repas
+- Prix : 10 € TTC la portion moyenne, 20 € TTC la grande portion.
+- Offre : pour toute réservation jusqu'au 10 décembre inclus, 5 repas achetés donnent droit à 1 repas offert (moyenne ou grande, au choix).
+- Annulation : « Pour modifier ou annuler une demande, appelez l'organisation avant de régler la facture. »
+  →
+
+Partenaires
+- Paiement : « Sur facture envoyée par e-mail, à régler par virement. »
+  →
+
+
+========================================================================
+4. PHRASES À VALIDER PAR L'ORGANISATEUR
+========================================================================
+
+Ces phrases figurent sur le site. Elles engagent l'organisateur : merci de les confirmer ou de les corriger.
+
+a) « Si l'événement est annulé par l'organisateur, les sommes versées pour les stands, les repas et les offres partenaires sont remboursées. »
+   →
+
+b) « Les visiteurs restent responsables de leurs effets personnels et des enfants qui les accompagnent, notamment dans l'espace de jeux gonflables. »
+   →
+
+c) « L'exposant reste responsable de son matériel, de ses produits et du respect des règles d'hygiène et de sécurité qui s'appliquent à son activité. »
+   →
+
+d) Données personnelles : « Les demandes sont supprimées au plus tard le 31 janvier 2027. Seules les factures et pièces comptables sont conservées plus longtemps, pendant la durée imposée par la loi (10 ans). »
+   Cette date vous convient ?
+   →
+
+e) Photos et vidéos : « L'événement est photographié et filmé pour les réseaux sociaux du marché et de ses partenaires. Si vous ne souhaitez pas apparaître, dites-le à l'équipe sur place, ou demandez le retrait d'une image par e-mail. »
+   →
+
+
+========================================================================
+
+Merci ! Dès réception de vos réponses, les pages sont mises à jour en ligne le jour même.
