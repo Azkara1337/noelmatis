@@ -35,7 +35,7 @@ function Carte({ v }: { v: Invite }) {
   const img = avatar(v);
   return (
     <article className="cr">
-      <div className={'cr-av' + (!v.avatar && v.detour ? ' det' : '')}>{img ? <img src={img} alt={v.nom} loading="lazy" /> : ICONES.user}</div>
+      <div className={'cr-ph' + (!v.avatar && v.detour ? ' det' : '')}>{img ? <img src={img} alt={v.nom} loading="lazy" /> : ICONES.user}</div>
       <h3>{v.nom}</h3>
       <p className="cr-univ">{v.desc}</p>
       <Abonnes v={v} />
@@ -50,7 +50,6 @@ function Hote({ v }: { v: Invite }) {
     <article className="hote">
       <div className="hote-ph"><img src={v.detour || v.photo} alt={v.nom} /></div>
       <div className="hote-t">
-        <span className="hote-k">L&apos;hôte du marché</span>
         <h3>{v.nom}</h3>
         <p>{v.desc}</p>
         <Abonnes v={v} />
@@ -97,7 +96,7 @@ export function DefileInvites() {
     return (
       <a key={cle} className="dfl-c" href="/invites/" aria-hidden={cache || undefined} tabIndex={cache ? -1 : undefined}>
         <span className={'dfl-ph' + (!v.avatar && v.detour ? ' det' : '')}><img src={avatar(v)} alt={cache ? '' : v.nom} loading="lazy" /></span>
-        <span className="dfl-t"><b>{v.nom}</b>{p && <small>{ICONES[p.k]}{p.n} abonnés</small>}</span>
+        <b>{v.nom}</b>{p && <small>{ICONES[p.k]}{p.n}</small>}
       </a>
     );
   };

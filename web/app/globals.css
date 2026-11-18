@@ -694,3 +694,34 @@ form label .facultatif{font-weight:500;color:var(--doux)}
 .prog-jour li b{font:800 16px/1.2 var(--fc);color:var(--rouge)}
 .prog-jour li span{font:600 15px/1.3 var(--fc);color:var(--encre)}
 .prog-jour li small{display:block;font-weight:500;color:var(--doux)}
+
+/* ===== Invités v4 (18/11) : grandes photos carrées, dernière ligne centrée ===== */
+.cr-g{display:flex!important;flex-wrap:wrap;justify-content:center}
+.cr-g>.cr{flex:0 1 calc(25% - 15px);min-width:0}
+.cr{padding:0 0 16px;overflow:hidden;gap:6px}
+.cr-ph{width:100%;aspect-ratio:1;display:grid;place-items:center;overflow:hidden;background:radial-gradient(120% 90% at 50% 100%,#f3c96a 0%,#d8322a 45%,#7d120d 100%);color:#fff;border-bottom:2px solid var(--or)}
+.cr-ph img{width:100%;height:100%;object-fit:cover;display:block}
+.cr-ph.det img{object-position:center top}
+.cr-ph svg{width:56px;height:56px}
+.cr h3,.cr-univ,.cr-rs,.cr-lien{margin-left:10px;margin-right:10px}
+.cr h3{margin-top:10px}
+/* carte de l'hôte : hauteur fixe de la photo (Safari ne calcule pas toujours le ratio) */
+.hote-ph{height:340px;min-height:0}
+@media(max-width:1000px){.cr-g>.cr{flex-basis:calc(33.333% - 14px)}}
+@media(max-width:700px){.cr-g>.cr{flex-basis:calc(50% - 7px)}.hote-ph{height:clamp(200px,58vw,300px);aspect-ratio:auto}.cr h3{font-size:19px}}
+
+/* ===== Accueil : carrés qui défilent (toujours en mouvement, pause au toucher) ===== */
+.dfl{padding:14px 0 18px}
+.dfl-piste{gap:14px;animation:dfl-defile 60s linear infinite!important;flex-wrap:nowrap!important;width:max-content!important;justify-content:flex-start!important}
+.dfl-c{display:grid!important;justify-items:center;align-content:start;gap:6px;width:clamp(150px,calc((100vw - 64px)/2),210px);padding:0 0 12px!important;border-radius:20px!important;overflow:hidden;text-align:center;white-space:normal}
+.dfl-c[aria-hidden]{display:grid!important}
+.dfl-ph{width:100%!important;height:auto!important;aspect-ratio:1;border-radius:0!important;border:0!important;border-bottom:2px solid var(--or)!important}
+.dfl-ph.det img{transform:none!important;object-position:center top!important}
+.dfl-c b{font:400 clamp(17px,2vw,21px)/1.1 var(--fs);color:var(--rouge2);padding:0 8px}
+.dfl-c small{display:flex;align-items:center;gap:5px;font:800 14px/1 var(--fc);color:var(--encre)}
+.dfl-c small svg{width:15px;height:15px;color:var(--rouge)}
+.dfl:active .dfl-piste{animation-play-state:paused}
+@media(prefers-reduced-motion:reduce){.dfl-piste{animation-duration:120s!important}.dfl{-webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}}
+/* accueil : bloc des valeurs en bas */
+.pt-bas{margin-top:34px}
+.pt-card:not(.pt-bas){padding-top:26px!important;padding-bottom:22px!important}.pt-card:not(.pt-bas) .pt-txt{margin-top:0!important}
