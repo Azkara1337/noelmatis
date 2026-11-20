@@ -67,9 +67,10 @@ export default function ReservationRepas() {
         erreur="Indiquez votre nom, votre e-mail et au moins un repas."
         titreMerci="Réservation enregistrée"
         recap={v => `Merci ${v.nom} ! ${v.repas} repas (${v.moyennes} moyenne${+v.moyennes > 1 ? 's' : ''}, ${v.grandes} grande${+v.grandes > 1 ? 's' : ''})${+v.offerts > 0 ? ` + ${v.offerts} offert${+v.offerts > 1 ? 's' : ''} (${v.offert_type.toLowerCase()})` : ''}, total ${v.total_ttc} TTC.`}
-        finMerci={PAIEMENT_EN_LIGNE ? 'Dernière étape : réglez en ligne. Votre ticket avec QR code arrive par e-mail juste après, à présenter à l’accueil.' : `Le paiement en ligne ouvre très bientôt : l’organisation vous envoie le lien par e-mail. Une question ? ${TELEPHONE}.`}
-        apresMerci={v => PAIEMENT_EN_LIGNE && v.ref ? <BoutonPaiement v={v} quoi="repas" montant={v.total_ttc} /> : null}
-        bouton={<>Réserver <span id="rbtn">{nb} repas · {total}</span></>}
+        finMerci={PAIEMENT_EN_LIGNE ? 'Votre réservation est enregistrée, mais le paiement ne s’est pas ouvert : réglez avec le bouton ci-dessous. Votre ticket avec QR code arrive par e-mail juste après.' : `Le paiement en ligne ouvre très bientôt : l’organisation vous envoie le lien par e-mail. Une question ? ${TELEPHONE}.`}
+        paiement={v => PAIEMENT_EN_LIGNE && v.ref ? 'repas' : null}
+        apresMerci={(v, pb) => PAIEMENT_EN_LIGNE && v.ref ? <BoutonPaiement v={v} quoi="repas" montant={v.total_ttc} probleme={pb} /> : null}
+        bouton={PAIEMENT_EN_LIGNE ? <>Payer <span id="rbtn">{total} · {nb} repas</span></> : <>Réserver <span id="rbtn">{nb} repas · {total}</span></>}
         apres={<p className="doux paie" style={{ fontSize: '12px' }}>{PAIEMENT}</p>}
       >
         <h3>Mes tickets repas</h3>

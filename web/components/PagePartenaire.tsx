@@ -69,10 +69,11 @@ export default function PagePartenaire() {
             requis={PAIEMENT_EN_LIGNE ? ['entreprise', 'nom', 'tel', 'email'] : ['entreprise', 'nom', 'tel']}
             erreur={PAIEMENT_EN_LIGNE ? 'Indiquez l’entreprise, votre nom, votre téléphone et votre e-mail.' : 'Indiquez l’entreprise, votre nom et un téléphone.'}
             titreMerci="Demande prête"
-            recap={v => `Merci ! Demande « ${v.offre} » reçue pour ${v.entreprise}. ` + (PAIEMENT_EN_LIGNE && PRIX_OFFRES[v.offre] ? `Dernière étape : réglez votre offre en ligne, ${eur(ttc(PRIX_OFFRES[v.offre]))} TTC. On vous rappelle ensuite sous 48 h au ${v.tel}.` : `On vous rappelle sous 48 h au ${v.tel}.`)}
+            recap={v => `Merci ! Demande « ${v.offre} » reçue pour ${v.entreprise}. ` + (PAIEMENT_EN_LIGNE && PRIX_OFFRES[v.offre] ? `Le paiement ne s’est pas ouvert : réglez votre offre avec le bouton ci-dessous (${eur(ttc(PRIX_OFFRES[v.offre]))} TTC). On vous rappelle ensuite sous 48 h au ${v.tel}.` : `On vous rappelle sous 48 h au ${v.tel}.`)}
             finMerci=""
-            apresMerci={v => PAIEMENT_EN_LIGNE && v.ref && PRIX_OFFRES[v.offre] ? <BoutonPaiement v={v} quoi="partenaire" montant={eur(ttc(PRIX_OFFRES[v.offre]))} /> : null}
-            bouton="Envoyer ma demande"
+            paiement={v => PAIEMENT_EN_LIGNE && v.ref && PRIX_OFFRES[v.offre] ? 'partenaire' : null}
+            apresMerci={(v, pb) => PAIEMENT_EN_LIGNE && v.ref && PRIX_OFFRES[v.offre] ? <BoutonPaiement v={v} quoi="partenaire" montant={eur(ttc(PRIX_OFFRES[v.offre]))} probleme={pb} /> : null}
+            bouton={PAIEMENT_EN_LIGNE && PRIX_OFFRES[pack] ? `Payer ${eur(ttc(PRIX_OFFRES[pack]))} TTC · ${pack}` : 'Envoyer ma demande'}
           >
             <h3>Je deviens partenaire du Marché de Noël</h3>
             <p className="doux" style={{fontSize:'14px'}}>On vous rappelle sous 48 h pour valider votre offre.</p>

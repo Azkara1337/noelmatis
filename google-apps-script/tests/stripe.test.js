@@ -43,7 +43,7 @@ t('2 moyennes + 1 grande : bonnes lignes et prix (en centimes)', () => {
   assert.strictEqual(p['line_items[1][price_data][unit_amount]'], '2000'); assert.strictEqual(p['line_items[1][quantity]'], '1');
   assert.strictEqual(p['line_items[0][price_data][currency]'], 'eur'); assert.strictEqual(p.mode, 'payment');
   assert.strictEqual(p.client_reference_id, 'R-ABCD2345'); assert.strictEqual(p.customer_email, 'a@b.fr');
-  assert.strictEqual(p.success_url, 'https://www.noel-rcimmo.fr/repas/?paiement=ok&session={CHECKOUT_SESSION_ID}');
+  assert.strictEqual(p.success_url, 'https://www.noel-rcimmo.fr/paiement/?type=repas&session={CHECKOUT_SESSION_ID}');
 });
 t('uniquement des grandes : une seule ligne', () => { const { creerPaiement, env } = charger(); creerPaiement({ m: '0', g: '3', email: 'a@b.fr', ref: 'R-ABCD2345' }); const p = decode(sess(env).o.payload); assert.strictEqual(p['line_items[0][price_data][unit_amount]'], '2000'); assert.ok(!('line_items[1][quantity]' in p)); });
 t('5 achetés : repas offert indiqué, pas facturé', () => { const { creerPaiement, env } = charger(); creerPaiement({ m: '5', g: '0', email: 'a@b.fr', ref: 'R-ABCD2345', type: 'Grande' }); const p = decode(sess(env).o.payload); assert.strictEqual(p['metadata[offerts]'], '1'); assert.match(p['line_items[0][price_data][product_data][description]'], /1 repas offert \(grande portion\)/); assert.strictEqual(p['line_items[0][quantity]'], '5'); });

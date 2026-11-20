@@ -146,10 +146,11 @@ export default function PageStand() {
           requis={PAIEMENT_EN_LIGNE ? ['nom', 'tel', 'email'] : ['nom', 'tel']}
           erreur={PAIEMENT_EN_LIGNE ? 'Indiquez votre nom, votre téléphone et votre e-mail.' : 'Indiquez votre nom et votre téléphone.'}
           titreMerci="C'est noté"
-          recap={v => `Merci ${v.nom} ! Demande reçue${v.stand ? ' pour le stand ' + v.stand : ''} (${v.categorie}). ` + (PAIEMENT_EN_LIGNE && PRIX_STANDS[v.categorie] ? `Dernière étape : réglez votre stand en ligne, ${eur(ttc(PRIX_STANDS[v.categorie]))} TTC. L’organisation vous appelle ensuite au ${v.tel} pour confirmer votre emplacement.` : `L’organisation vous rappelle au ${v.tel} pour confirmer votre emplacement et le tarif.`)}
+          recap={v => `Merci ${v.nom} ! Demande reçue${v.stand ? ' pour le stand ' + v.stand : ''} (${v.categorie}). ` + (PAIEMENT_EN_LIGNE && PRIX_STANDS[v.categorie] ? `Le paiement ne s’est pas ouvert : réglez votre stand avec le bouton ci-dessous (${eur(ttc(PRIX_STANDS[v.categorie]))} TTC). L’organisation vous appelle ensuite au ${v.tel} pour confirmer votre emplacement.` : `L’organisation vous rappelle au ${v.tel} pour confirmer votre emplacement et le tarif.`)}
           finMerci=""
-          apresMerci={v => PAIEMENT_EN_LIGNE && v.ref && PRIX_STANDS[v.categorie] ? <BoutonPaiement v={v} quoi="stand" montant={eur(ttc(PRIX_STANDS[v.categorie]))} /> : null}
-          bouton="Envoyer ma demande de stand"
+          paiement={v => PAIEMENT_EN_LIGNE && v.ref && PRIX_STANDS[v.categorie] ? 'stand' : null}
+          apresMerci={(v, pb) => PAIEMENT_EN_LIGNE && v.ref && PRIX_STANDS[v.categorie] ? <BoutonPaiement v={v} quoi="stand" montant={eur(ttc(PRIX_STANDS[v.categorie]))} probleme={pb} /> : null}
+          bouton={PAIEMENT_EN_LIGNE && PRIX_STANDS[cat] ? `Payer ${eur(ttc(PRIX_STANDS[cat]))} TTC et envoyer ma demande` : 'Envoyer ma demande de stand'}
           boutonClass="btn plein xcta"
         >
           <h3>Je réserve mon stand</h3>

@@ -45,6 +45,7 @@ const TVA_REPAS = 0.10;           // repas : prix TTC, TVA comprise (taux de la 
 // E-mails : par Resend si la propriété RESEND_KEY existe (adresse du site, pas de limite Gmail), sinon par Gmail.
 const EXPEDITEUR_DEFAUT = 'billetterie@noel-rcimmo.fr';   // adresse d'envoi (domaine vérifié dans Resend) ; modifiable : propriété RESEND_FROM
 const REPONDRE_A = 'mathilde.calero@rc-immo.com';          // les réponses des clients arrivent ici
+const COPIE_CLIENTS = 'mathilde.calero@rc-immo.com';       // copie cachée de chaque e-mail envoyé à un client (vide = pas de copie)
 const FACTURE_PIED = 'RC IMMO · SAS · 10 B rue Jean Rostand, 09100 Pamiers · RCS Foix 892 450 172';
 const PRIX_STANDS = {'Artisanat, créations': 120, 'Producteur, terroir': 180, 'Snacking, gourmandises': 280, 'Restauration, spécialités': 420, 'Stand Premium, brasero': 590};
 const PRIX_OFFRES = {'Étoile de Noël': 200, 'Sapin Gourmand': 400, 'Maison du Père Noël': 1200, 'Partenaire Prestige': 2500};
@@ -416,8 +417,8 @@ function creerPaiement(p) {
       locale: 'fr',
       customer_email: email,
       client_reference_id: ref,
-      success_url: SITE + '/' + page + '/?paiement=ok&session={CHECKOUT_SESSION_ID}',
-      cancel_url: SITE + '/' + page + '/?paiement=annule',
+      success_url: SITE + '/paiement/?type=' + page + '&session={CHECKOUT_SESSION_ID}',
+      cancel_url: SITE + '/paiement/?type=' + page + '&annule=1',
       line_items: lignes,
       metadata: meta,
       payment_intent_data: {description: NOM_EVENT + ' · ' + quoi + ' · ' + ref},
@@ -696,6 +697,7 @@ function expediteur() { return PropertiesService.getScriptProperties().getProper
  * Avec Resend : depuis l'adresse du site, réponse vers REPONDRE_A. Si Resend refuse, on retombe sur Gmail.
  */
 function envoyerMail(m) {
+  if (m.name && COPIE_CLIENTS && String(m.to).indexOf(COPIE_CLIENTS) < 0) m.bcc = COPIE_CLIENTS;   // e-mail client : copie à la secrétaire
   const cle = cleResend();
   if (cle) {
     const corps = {
@@ -705,6 +707,7 @@ function envoyerMail(m) {
       text: m.body,
       html: m.html || undefined,
       reply_to: REPONDRE_A,
+      bcc: m.bcc ? [m.bcc] : undefined,
       attachments: (m.attachments || []).map(function (b) { return {filename: b.getName(), content: Utilities.base64Encode(b.getBytes())}; })
     };
     const r = UrlFetchApp.fetch('https://api.resend.com/emails', {method: 'post', contentType: 'application/json', headers: {Authorization: 'Bearer ' + cle}, payload: JSON.stringify(corps), muteHttpExceptions: true});
@@ -712,6 +715,7 @@ function envoyerMail(m) {
     console.error('Resend refuse l\'e-mail (' + r.getResponseCode() + ') : ' + r.getContentText() + ' — envoi par Gmail');
   }
   const g = {to: m.to, subject: m.subject, body: m.body, name: m.name, attachments: m.attachments};
+  if (m.bcc) g.bcc = m.bcc;
   if (m.html) g.htmlBody = m.html;
   MailApp.sendEmail(g);
 }
