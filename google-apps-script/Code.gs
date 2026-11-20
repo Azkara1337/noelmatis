@@ -245,7 +245,12 @@ function prevenir(d, o) {
   const dest = NOTIFIER || Session.getEffectiveUser().getEmail();
   const titre = {stand: 'Nouvelle demande de stand', repas: 'Nouvelle réservation de repas', partenaire: 'Nouvelle demande partenaire'}[d.type];
   const corps = o.cols.map(function (c) { return c[1] + ' : ' + (d[c[0]] || '-'); }).join('\n');
-  envoyerMail({to: dest, subject: NOM_EVENT + ' · ' + titre, body: corps + '\n\nTout est dans le Google Sheet : ' + SpreadsheetApp.getActiveSpreadsheet().getUrl()});
+  const url = SpreadsheetApp.getActiveSpreadsheet().getUrl();
+  envoyerMail({to: dest, subject: NOM_EVENT + ' · ' + titre, body: corps + '\n\nTout est dans le Google Sheet : ' + url,
+    html: gabarit({interne: true, apercu: titre + ' : ' + (d.entreprise || d.nom || ''), titre: titre,
+      paragraphes: [d.ref && (PRIX_STANDS[d.categorie] || PRIX_OFFRES[d.offre]) ? 'La personne peut régler en ligne depuis le site. Vous recevrez un e-mail « paiement reçu » dès que c\'est fait.' : 'Une nouvelle demande vient d\'arriver.'],
+      encadre: o.cols.filter(function (c) { return ['date', 'statut', 'paiement', 'facture', 'ticket', 'retrait'].indexOf(c[0]) < 0; }).map(function (c) { return [c[1], h(d[c[0]] || '')]; }),
+      bouton: {texte: 'Ouvrir le Google Sheet', url: url}})});
 }
 
 function confirmer(d) {
@@ -256,14 +261,30 @@ function confirmer(d) {
   if (cache.get(cle)) return;                                      // une confirmation par adresse et par heure
   cache.put(cle, '1', 3600);
   const nom = String(d.nom || '').replace(/https?:\/\/\S+|www\.\S+/gi, '').replace(/[<>]/g, '').trim().slice(0, 60);
-  const bonjour = 'Bonjour ' + nom + ',\n\n';
   const fin = '\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nÀ très vite,\nL\'équipe du ' + NOM_EVENT + '\n' + DATES;
+  const payable = d.type === 'stand' ? PRIX_STANDS[d.categorie] : d.type === 'partenaire' ? PRIX_OFFRES[d.offre] : 0;
   const txt = {
-    stand: 'Nous avons bien reçu votre demande de stand' + (d.stand ? ' (stand ' + d.stand + ' souhaité)' : '') + ' pour le ' + NOM_EVENT + '. ' + (PRIX_STANDS[d.categorie] ? 'Si ce n\'est pas déjà fait, réglez votre stand en ligne depuis le site. ' : '') + 'L\'organisation vous appelle pour confirmer votre emplacement.',
+    stand: 'Nous avons bien reçu votre demande de stand' + (d.stand ? ' (stand ' + d.stand + ' souhaité)' : '') + ' pour le ' + NOM_EVENT + '. ' + (payable ? 'Si ce n\'est pas déjà fait, réglez votre stand en ligne depuis le site. ' : '') + 'L\'organisation vous appelle pour confirmer votre emplacement.',
     repas: 'Nous avons bien reçu votre demande de ' + (d.repas || '') + ' repas (' + (d.moyennes || 0) + ' moyenne(s), ' + (d.grandes || 0) + ' grande(s), ' + (d.total_ttc || '') + ' TTC)' + (+d.offerts > 0 ? ', plus ' + d.offerts + ' repas offert(s) en portion ' + String(d.offert_type).toLowerCase() : '') + ' pour le ' + NOM_EVENT + '. Le paiement se fait en ligne, par carte bancaire, depuis le site. Dès le paiement reçu, vous recevez par e-mail votre ticket repas (PDF avec un QR code) : présentez-le à l\'accueil du marché pour récupérer vos tickets, à échanger dans le stand de votre choix.',
-    partenaire: 'Nous avons bien reçu votre demande pour l\'offre « ' + (d.offre || '') + ' ». ' + (PRIX_OFFRES[d.offre] ? 'Si ce n\'est pas déjà fait, réglez votre offre en ligne depuis le site. ' : '') + 'Nous vous rappelons sous 48 h.'
+    partenaire: 'Nous avons bien reçu votre demande pour l\'offre « ' + (d.offre || '') + ' ». ' + (payable ? 'Si ce n\'est pas déjà fait, réglez votre offre en ligne depuis le site. ' : '') + 'Nous vous rappelons sous 48 h.'
   }[d.type];
-  envoyerMail({to: mail, subject: NOM_EVENT + ' · demande bien reçue', body: bonjour + txt + fin, name: NOM_EVENT});
+  const html = gabarit({
+    apercu: 'Votre demande est bien arrivée.',
+    titre: 'Demande bien reçue',
+    paragraphes: ['Bonjour ' + h(nom) + ',', {
+      stand: 'Merci ! Votre demande de stand pour le Marché de Noël est bien arrivée. L\'organisation vous appelle pour confirmer votre emplacement.',
+      repas: 'Merci ! Votre réservation de repas est bien arrivée. Dès le paiement reçu, vous recevez votre <b>ticket repas avec QR code</b>, à présenter à l\'accueil du marché.',
+      partenaire: 'Merci de vouloir soutenir le Marché de Noël ! Votre demande est bien arrivée, nous vous rappelons sous 48 h.'
+    }[d.type]],
+    encadre: {
+      stand: [['Catégorie', h(d.categorie)], ['Stand souhaité', d.stand ? 'n° ' + h(d.stand) : 'pas de préférence'], ['Tarif', payable ? h(payable + ' € HT, soit ' + euros(payable * (1 + TVA)) + ' TTC') : '']],
+      repas: [['Repas', h(d.repas)], ['Total', h(d.total_ttc) + ' TTC']],
+      partenaire: [['Offre', h(d.offre)], ['Entreprise', h(d.entreprise)], ['Tarif', payable ? h(payable + ' € HT, soit ' + euros(payable * (1 + TVA)) + ' TTC') : '']]
+    }[d.type],
+    bouton: payable ? {texte: d.type === 'stand' ? 'Régler mon stand en ligne' : 'Régler mon offre en ligne', url: SITE + (d.type === 'stand' ? '/stand/#fexpo' : '/partenaire/#contact')} : null,
+    note: payable ? 'Déjà réglé ? Parfait : vous recevez une confirmation de paiement avec votre facture.' : ''
+  });
+  envoyerMail({to: mail, subject: NOM_EVENT + ' · demande bien reçue', body: 'Bonjour ' + nom + ',\n\n' + txt + fin, html: html, name: NOM_EVENT});
 }
 
 function json(obj) {
@@ -502,7 +523,9 @@ function envoyerFactureSiBesoin(ref, fac) {
     const l = ligneRepas(ref);
     if (!l || !/^Payé/.test(String(l.d.paiement)) || String(l.d.facture) || !MAIL_RE.test(String(l.d.email || ''))) return false;
     envoyerMail({to: String(l.d.email), subject: NOM_EVENT + ' · votre facture n° ' + fac.numero, name: NOM_EVENT, attachments: [fac.pdf],
-      body: 'Bonjour ' + String(l.d.nom || '').replace(/[<>]/g, '').slice(0, 60) + ',\n\nVous trouverez ci-joint votre facture n° ' + fac.numero + ' (référence ' + ref + ').\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nL\'équipe du ' + NOM_EVENT + '\n' + DATES});
+      body: 'Bonjour ' + String(l.d.nom || '').replace(/[<>]/g, '').slice(0, 60) + ',\n\nVous trouverez ci-joint votre facture n° ' + fac.numero + ' (référence ' + ref + ').\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nL\'équipe du ' + NOM_EVENT + '\n' + DATES,
+      html: gabarit({apercu: 'Votre facture n° ' + fac.numero, titre: 'Votre facture', paragraphes: ['Bonjour ' + h(String(l.d.nom || '').slice(0, 60)) + ',', 'Vous trouverez votre facture en pièce jointe.'],
+        encadre: [['Facture', 'n° ' + h(fac.numero)], ['Référence', h(ref)]], bouton: fac.url ? {texte: 'Voir la facture en ligne', url: fac.url} : null})});
     noterFacture(l, fac);
     return true;
   } catch (err) {
@@ -522,17 +545,35 @@ function mailsPaiement(ref, montant, test, fac) {
   const aFaire = quoi === 'stand' ? 'À faire : appeler l\'exposant pour confirmer son emplacement, puis le noter dans l\'onglet Plan.'
     : quoi === 'partenaire' ? 'À faire : rappeler le partenaire (logo avant le 1er décembre, tournage), puis l\'ajouter dans l\'onglet Logos.'
     : 'Le ticket repas est parti automatiquement.';
+  const url = SpreadsheetApp.getActiveSpreadsheet().getUrl();
   envoyerMail({to: NOTIFIER || Session.getEffectiveUser().getEmail(), subject: NOM_EVENT + ' · paiement reçu' + (test ? ' (TEST)' : '') + ' · ' + montant + ' €',
     body: 'Paiement reçu' + (test ? ' en mode TEST (pas de vrai argent)' : '') + ' : ' + montant + ' € TTC\n\n' + quoiTexte + '\n' + (d.entreprise ? 'Entreprise : ' + d.entreprise + '\n' : '')
       + 'Nom : ' + nom + '\nTéléphone : ' + (d.tel || '-') + '\nE-mail : ' + (d.email || '-') + '\nRéférence : ' + ref + '\n\n' + aFaire
       + (fac && fac.url ? '\n\nFacture n° ' + fac.numero + ' : ' + fac.url : '')
-      + '\n\nTout est dans le Google Sheet : ' + SpreadsheetApp.getActiveSpreadsheet().getUrl()});
+      + '\n\nTout est dans le Google Sheet : ' + url,
+    html: gabarit({interne: true, apercu: montant + ' € reçus · ' + quoiTexte, titre: 'Paiement reçu' + (test ? ' (TEST)' : '') + ' · ' + euros(montant),
+      paragraphes: [test ? '<b>Mode test</b> : aucun vrai argent n\'a été encaissé.' : 'Un paiement vient d\'être encaissé sur le site.'],
+      encadre: [['Achat', h(quoiTexte)], ['Entreprise', h(d.entreprise || '')], ['Nom', h(nom)], ['Téléphone', h(d.tel || '')], ['E-mail', h(d.email || '')], ['Code promo', h(d.code_promo || '')], ['Référence', h(ref)], ['Facture', fac ? (fac.url ? '<a href="' + h(fac.url) + '" style="color:#a3180f">n° ' + h(fac.numero) + '</a>' : 'n° ' + h(fac.numero)) : '']],
+      note: h(aFaire), bouton: {texte: 'Ouvrir le Google Sheet', url: url}})});
   if (quoi === 'repas' || !MAIL_RE.test(String(d.email || ''))) return;   // repas : le ticket fait office de confirmation
   const txt = quoi === 'stand'
     ? 'Nous avons bien reçu votre paiement de ' + montant + ' € TTC pour votre ' + quoiTexte + ' au ' + NOM_EVENT + '.\n\nL\'organisation vous appelle au ' + (d.tel || 'numéro indiqué') + ' pour confirmer votre emplacement. Installation le vendredi 18 décembre de 8 h à 11 h, ouverture à 14 h. La tonnelle est à décorer par vos soins, sur le thème de Noël.'
     : 'Nous avons bien reçu votre paiement de ' + montant + ' € TTC pour l\'' + quoiTexte + '. Merci de soutenir le ' + NOM_EVENT + ' !\n\nNous vous rappelons sous 48 h pour la suite : votre logo (à nous envoyer avant le 1er décembre), les photos et vidéos, et vos repas offerts.';
   const libre = fac && !String(d.facture || '');
-  envoyerMail({to: String(d.email), subject: NOM_EVENT + ' · paiement bien reçu', name: NOM_EVENT, attachments: libre ? [fac.pdf] : [],
+  const html = gabarit({
+    apercu: 'Paiement de ' + euros(montant) + ' bien reçu, merci !',
+    titre: 'Paiement bien reçu, merci !',
+    paragraphes: quoi === 'stand'
+      ? ['Bonjour ' + h(nom) + ',', 'Votre stand au Marché de Noël est réglé. L\'organisation vous appelle au <b>' + h(d.tel || 'numéro indiqué') + '</b> pour confirmer votre emplacement.']
+      : ['Bonjour ' + h(nom) + ',', 'Merci de soutenir le Marché de Noël ! Nous vous rappelons sous 48 h pour la suite : votre logo, les photos et vidéos, et vos repas offerts.'],
+    encadre: quoi === 'stand'
+      ? [['Stand', h(d.categorie)], ['Emplacement souhaité', d.stand ? 'n° ' + h(d.stand) : 'pas de préférence'], ['Montant réglé', euros(montant) + ' TTC'], ['Installation', 'vendredi 18 décembre, 8 h-11 h'], ['Ouverture', 'vendredi 18 décembre, 14 h'], ['Référence', h(ref)]]
+      : [['Offre', h(d.offre)], ['Entreprise', h(d.entreprise || '')], ['Montant réglé', euros(montant) + ' TTC'], ['Logo à envoyer', 'avant le 1er décembre'], ['Référence', h(ref)]],
+    note: (quoi === 'stand' ? 'La tonnelle est à décorer par vos soins, <b>sur le thème de Noël</b>. Le plus beau stand aura une surprise, remise le samedi 19 décembre !<br>' : '')
+      + (libre ? '🧾 Votre facture n° ' + h(fac.numero) + ' est jointe à cet e-mail.' : '🧾 Votre facture vous est envoyée par e-mail.'),
+    bouton: libre && fac.url ? {texte: 'Voir ma facture', url: fac.url} : null
+  });
+  envoyerMail({to: String(d.email), subject: NOM_EVENT + ' · paiement bien reçu', name: NOM_EVENT, attachments: libre ? [fac.pdf] : [], html: html,
     body: 'Bonjour ' + nom + ',\n\n' + txt + '\n\n' + (libre ? 'Votre facture n° ' + fac.numero + ' est jointe à cet e-mail.' : 'Votre facture vous est envoyée par e-mail.') + ' Référence : ' + ref + '.\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nÀ très vite,\nL\'équipe du ' + NOM_EVENT + '\n' + DATES});
   if (libre) noterFacture(l, fac);
 }
@@ -596,6 +637,55 @@ function utilisations(code) {
   return n;
 }
 
+// ===================== Modèle des e-mails (aux couleurs du site) =====================
+
+/** Échappe un texte pour le HTML d'un e-mail. */
+function h(t) { return String(t === undefined || t === null ? '' : t).replace(/[&<>"']/g, function (c) { return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]; }); }
+
+/**
+ * E-mail HTML : bannière, ruban rouge, carte crème bordée d'or, bouton, pied de page.
+ * o = {apercu, titre, paragraphes: [html], encadre: [[libellé, valeur]], bouton: {texte, url}, note: html, interne: bool}
+ * Les paragraphes et la note sont déjà du HTML (échapper les données avec h()).
+ */
+function gabarit(o) {
+  const F = "'Barlow',Arial,Helvetica,sans-serif", FC = "'Barlow Condensed','Arial Narrow',Arial,sans-serif", FS = "'Kaushan Script',Georgia,'Times New Roman',serif";
+  const encadre = (o.encadre || []).filter(function (l) { return l && l[1] !== '' && l[1] !== undefined && l[1] !== null; }).map(function (l, i) {
+    return '<tr><td style="padding:10px 14px;' + (i ? 'border-top:1px solid #f1e2bf;' : '') + 'font:600 13px/1.3 ' + FC + ';color:#8a6d55;text-transform:uppercase;letter-spacing:.04em;width:42%;vertical-align:top">' + h(l[0]) + '</td>'
+      + '<td style="padding:10px 14px;' + (i ? 'border-top:1px solid #f1e2bf;' : '') + 'font:600 15px/1.35 ' + F + ';color:#1a1a17;vertical-align:top">' + l[1] + '</td></tr>';
+  }).join('');
+  return '<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only">'
+    + '<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Barlow+Condensed:wght@600;700;800&family=Kaushan+Script&display=swap" rel="stylesheet"></head>'
+    + '<body style="margin:0;padding:0;background:#efe3c8">'
+    + '<div style="display:none;max-height:0;overflow:hidden;opacity:0">' + h(o.apercu || '') + '</div>'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#efe3c8"><tr><td align="center" style="padding:24px 12px">'
+    + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#fffaf0;border:2px solid #c8962e;border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(90,50,15,.18)">'
+    // bannière
+    + '<tr><td style="padding:0;line-height:0"><img src="' + SITE + '/img/mail-bandeau.jpg" width="600" alt="Marché de Noël des Artisans &amp; Commerçants" style="display:block;width:100%;max-width:600px;height:auto;border:0"></td></tr>'
+    // ruban
+    + '<tr><td align="center" style="background:#a3180f;background-image:linear-gradient(180deg,#d8322a,#a3180f);border-top:3px solid #c8962e;border-bottom:3px solid #c8962e;padding:14px 16px">'
+    + '<div style="font:400 30px/1.1 ' + FS + ';color:#ffffff">Marché de Noël</div>'
+    + '<div style="margin-top:4px;font:600 14px/1.3 ' + FC + ';color:#ffe6a6;letter-spacing:.08em;text-transform:uppercase">des Artisans &amp; Commerçants · Pamiers</div></td></tr>'
+    // contenu
+    + '<tr><td style="padding:28px 28px 8px">'
+    + (o.interne ? '<div style="display:inline-block;margin-bottom:10px;padding:3px 10px;border-radius:999px;background:#2e5e2a;color:#fff;font:700 11px/1.6 ' + FC + ';letter-spacing:.08em;text-transform:uppercase">Organisation</div>' : '')
+    + '<h1 style="margin:0 0 14px;font:800 26px/1.15 ' + FC + ';color:#a3180f">' + h(o.titre) + '</h1>'
+    + (o.paragraphes || []).map(function (t) { return '<p style="margin:0 0 14px;font:500 16px/1.55 ' + F + ';color:#1a1a17">' + t + '</p>'; }).join('')
+    + (encadre ? '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 18px;background:#ffffff;border:1.5px solid #ecd3a0;border-radius:12px;border-collapse:separate">' + encadre + '</table>' : '')
+    + (o.bouton ? '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:4px 0 18px"><tr><td style="border-radius:999px;background:#c8251a;border:2px solid #c8962e"><a href="' + h(o.bouton.url) + '" style="display:inline-block;padding:13px 26px;font:700 16px/1 ' + FC + ';color:#ffffff;text-decoration:none;letter-spacing:.03em">' + h(o.bouton.texte) + '</a></td></tr></table>' : '')
+    + (o.note ? '<div style="margin:0 0 18px;padding:12px 14px;background:#fff3d6;border-left:4px solid #c8962e;border-radius:8px;font:500 14px/1.5 ' + F + ';color:#5a3d1e">' + o.note + '</div>' : '')
+    + '<p style="margin:6px 0 22px;font:500 15px/1.5 ' + F + ';color:#1a1a17">À très vite,<br><span style="font:400 20px/1.4 ' + FS + ';color:#a3180f">L\'équipe du Marché de Noël</span></p>'
+    + '</td></tr>'
+    // pied de page
+    + '<tr><td style="background:#3b2416;background-image:linear-gradient(180deg,#4a2d1b,#2f1c11);padding:18px 24px;border-top:3px solid #c8962e">'
+    + '<div style="font:700 15px/1.4 ' + FC + ';color:#ffe6a6;letter-spacing:.03em">Vendredi 18 (14 h-20 h) · samedi 19 (10 h-20 h) · dimanche 20 décembre (10 h-18 h)</div>'
+    + '<div style="margin-top:6px;font:500 13px/1.5 ' + F + ';color:#f3e3c3">10 B rue Jean Rostand, 09100 Pamiers · <a href="tel:+33534032440" style="color:#f3e3c3;text-decoration:none">' + TELEPHONE + '</a> · <a href="' + SITE + '" style="color:#ffe6a6">noel-rcimmo.fr</a></div>'
+    + '</td></tr></table>'
+    + '<div style="max-width:600px;margin-top:12px;font:500 11px/1.5 ' + F + ';color:#8a6d55">Vous recevez cet e-mail suite à votre demande sur ' + SITE.replace('https://', '') + '. Pour toute question, répondez simplement à cet e-mail.</div>'
+    + '</td></tr></table></body></html>';
+}
+
+function euros(n) { return String(Math.round(n * 100) / 100).replace('.', ',') + ' €'; }
+
 // ===================== Envoi des e-mails (Resend, ou Gmail en secours) =====================
 
 function cleResend() { return PropertiesService.getScriptProperties().getProperty('RESEND_KEY') || ''; }
@@ -613,6 +703,7 @@ function envoyerMail(m) {
       to: String(m.to).split(',').map(function (x) { return x.trim(); }).filter(String),
       subject: m.subject,
       text: m.body,
+      html: m.html || undefined,
       reply_to: REPONDRE_A,
       attachments: (m.attachments || []).map(function (b) { return {filename: b.getName(), content: Utilities.base64Encode(b.getBytes())}; })
     };
@@ -620,7 +711,9 @@ function envoyerMail(m) {
     if (r.getResponseCode() < 300) return;
     console.error('Resend refuse l\'e-mail (' + r.getResponseCode() + ') : ' + r.getContentText() + ' — envoi par Gmail');
   }
-  MailApp.sendEmail(m);
+  const g = {to: m.to, subject: m.subject, body: m.body, name: m.name, attachments: m.attachments};
+  if (m.html) g.htmlBody = m.html;
+  MailApp.sendEmail(g);
 }
 
 /** Menu : clé Resend et adresse d'envoi, vérifiées par un e-mail de test. */
@@ -819,7 +912,14 @@ function envoyerTicket(d, fac) {
   const corps = 'Bonjour ' + String(d.nom).replace(/[<>]/g, '') + ',\n\nMerci pour votre paiement ! Vous trouverez votre ticket repas en pièce jointe (PDF).\n\n'
     + 'Le jour du marché, présentez le QR code à l\'accueil (sur votre téléphone ou imprimé) : on vous remet vos tickets, à échanger dans le stand de votre choix.\n'
     + 'Attention : le QR code ne fonctionne qu\'une seule fois, ne le partagez pas.\n\nRéférence : ' + d.ref + '\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nÀ très vite,\nL\'équipe du ' + NOM_EVENT + '\n' + DATES;
-  envoyerMail({to: String(d.email), subject: NOM_EVENT + ' · votre ticket repas', body: corps + (fac ? '\n\nVotre facture n° ' + fac.numero + ' est également jointe.' : ''), name: NOM_EVENT, attachments: fac ? [pdf, fac.pdf] : [pdf]});
+  const htmlMail = gabarit({
+    apercu: 'Votre ticket repas avec QR code est en pièce jointe.',
+    titre: 'Votre ticket repas 🎫',
+    paragraphes: ['Bonjour ' + h(String(d.nom).slice(0, 60)) + ',', 'Merci pour votre paiement ! Votre <b>ticket repas</b> est en pièce jointe (PDF, avec votre QR code).'],
+    encadre: [['Moyennes portions', m > 0 ? '× ' + m : ''], ['Grandes portions', g > 0 ? '× ' + g : ''], ['Repas offerts', off > 0 ? '× ' + off + ' (' + h(String(d.offert_type || 'moyenne').toLowerCase()) + ')' : ''], ['Total réglé', h(d.total_ttc) + ' TTC'], ['Référence', h(d.ref)]],
+    note: '<b>Le jour du marché :</b> présentez le QR code à l\'accueil (sur votre téléphone ou imprimé). On vous remet vos tickets, à échanger dans le stand de votre choix pendant les 3 jours.<br>⚠️ Le QR code ne fonctionne qu\'une seule fois : ne le partagez pas.' + (fac ? '<br>🧾 Votre facture n° ' + h(fac.numero) + ' est également jointe.' : '')
+  });
+  envoyerMail({to: String(d.email), subject: NOM_EVENT + ' · votre ticket repas', body: corps + (fac ? '\n\nVotre facture n° ' + fac.numero + ' est également jointe.' : ''), html: htmlMail, name: NOM_EVENT, attachments: fac ? [pdf, fac.pdf] : [pdf]});
 }
 
 /** Vérifie le code accueil, avec limite d'essais. */
