@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
+import { pageMeta } from '@/lib/seo';
 import Link from 'next/link';
 import PageLegale, { Champ } from '@/components/Legal';
 import { CONTACT_MAIL, ORGANISATEUR, TELEPHONE } from '@/lib/config';
 
-export const metadata: Metadata = { title: 'Mentions légales' };
+export const metadata: Metadata = pageMeta('/mentions-legales/', 'Mentions légales', 'Mentions légales du site du Marché de Noël des Artisans & Commerçants de Pamiers.');
 
 export default function MentionsLegales() {
   const o = ORGANISATEUR;

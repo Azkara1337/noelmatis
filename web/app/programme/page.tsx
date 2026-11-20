@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
+import { pageMeta } from '@/lib/seo';
 import ProgrammeCompteur from '@/components/ProgrammeCompteur';
 
-export const metadata: Metadata = { title: 'Programme' };
+export const metadata: Metadata = pageMeta('/programme/', 'Programme', 'Programme du Marché de Noël de Pamiers, du 18 au 20 décembre 2026 : spectacles, animations, invités, dégustations, jeux. Le programme complet est dévoilé le 14 décembre.');
 
 export default function Programme() {
   return (

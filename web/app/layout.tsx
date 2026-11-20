@@ -5,16 +5,17 @@ import Entete from '@/components/Entete';
 import { ToastProvider } from '@/components/Toast';
 import Link from 'next/link';
 import { ADRESSE, SITE_URL, TELEPHONE } from '@/lib/config';
+import { NOM_SITE } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: { default: 'Marché de Noël des Artisans & Commerçants', template: 'Marché de Noël · %s' },
-  description: "Marché de Noël du 18 au 20 décembre 2026 : 30 stands d'artisans, producteurs et restauration, le Père Noël, château gonflable, salle chauffée. Réservez vos repas, votre stand ou devenez partenaire.",
-  openGraph: {
-    type: 'website',
-    title: 'Marché de Noël des Artisans & Commerçants · du 18 au 20 décembre 2026',
-    description: '30 stands, le Père Noël, des jeux pour les enfants et de quoi se régaler. Réservez vos repas ou votre stand.',
-    images: [`${SITE_URL}/img/poster.jpg`],
-  },
+  metadataBase: new URL(SITE_URL),
+  title: { default: 'Marché de Noël des Artisans & Commerçants · Pamiers', template: `%s · ${NOM_SITE}` },
+  description: "Marché de Noël à Pamiers (Ariège) du 18 au 20 décembre 2026 : 30 stands d'artisans, producteurs et restauration, le Père Noël, jeux gonflables, salle chauffée.",
+  applicationName: NOM_SITE,
+  formatDetection: { telephone: false },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 } },
+  openGraph: { type: 'website', locale: 'fr_FR', siteName: NOM_SITE, images: [{ url: '/img/poster.jpg', width: 1200, height: 700 }] },
+  twitter: { card: 'summary_large_image', images: ['/img/poster.jpg'] },
   icons: {
     icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23d63f2b'/%3E%3Cpath d='M32 10l5 15h16l-13 9 5 16-13-10-13 10 5-16-13-9h16z' fill='%23fff'/%3E%3C/svg%3E",
   },

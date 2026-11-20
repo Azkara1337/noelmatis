@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
+import { pageMeta } from '@/lib/seo';
 import ReservationRepas from '@/components/ReservationRepas';
 import { RetourPaiement } from '@/components/Paiement';
 
-export const metadata: Metadata = { title: 'Repas' };
+export const metadata: Metadata = pageMeta('/repas/', 'Réserver ses repas', "Réservez vos repas au Marché de Noël de Pamiers (18-20 décembre 2026) : portion moyenne 10 €, grande portion 20 €. Paiement en ligne, ticket à QR code par e-mail. 5 repas achetés = 1 offert jusqu'au 10 décembre.");
 
 export default function Repas() {
   return (

@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
+import { pageMeta } from '@/lib/seo';
 import PageLegale, { Champ } from '@/components/Legal';
 import { CONTACT_MAIL, ORGANISATEUR } from '@/lib/config';
 
-export const metadata: Metadata = { title: 'Données personnelles' };
+export const metadata: Metadata = pageMeta('/confidentialite/', 'Données personnelles', 'Comment le site du Marché de Noël de Pamiers utilise et protège vos données personnelles.');
 
 export default function Confidentialite() {
   const mail = CONTACT_MAIL ? <a href={`mailto:${CONTACT_MAIL}`}>{CONTACT_MAIL}</a> : <Champ />;

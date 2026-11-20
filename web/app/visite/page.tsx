@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
+import { pageMeta } from '@/lib/seo';
 import Visite3D from '@/components/Visite3D';
 
-export const metadata: Metadata = { title: 'Visite 3D' };
+export const metadata: Metadata = pageMeta('/visite/', 'Visite 3D du marché', "Visitez le Marché de Noël de Pamiers en 3D avant d'y venir : les stands, la salle chauffée et l'univers du Père Noël.");
 
 export default function Visite() {
   return (

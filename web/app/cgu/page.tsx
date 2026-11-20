@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
+import { pageMeta } from '@/lib/seo';
 import Link from 'next/link';
 import PageLegale, { Champ } from '@/components/Legal';
 import { CONDITIONS, OFFRE_REPAS, ORGANISATEUR, PAIEMENT, PRIX_GRANDE, PRIX_MOYENNE, TELEPHONE } from '@/lib/config';
 
-export const metadata: Metadata = { title: "Conditions générales" };
+export const metadata: Metadata = pageMeta('/cgu/', 'Conditions générales', 'Conditions générales du site et des réservations (repas, stands, partenariats) du Marché de Noël de Pamiers.');
 
 export default function Cgu() {
   const c = CONDITIONS;

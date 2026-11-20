@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
+import { pageMeta } from '@/lib/seo';
 import GrilleInvites, { StatsInvites } from '@/components/Invites';
 
-export const metadata: Metadata = { title: 'Invités' };
+export const metadata: Metadata = pageMeta('/invites/', 'Créateurs invités', 'Les créateurs de contenu invités au Marché de Noël de Pamiers, du 18 au 20 décembre 2026 : venez les rencontrer.');
 
 export default function Invites() {
   return (

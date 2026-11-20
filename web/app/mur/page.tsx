@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
+import { pageMeta } from '@/lib/seo';
 import Link from 'next/link';
 import MurLogos from '@/components/MurLogos';
 
-export const metadata: Metadata = { title: 'Mur des partenaires' };
+export const metadata: Metadata = pageMeta('/mur/', 'Mur des partenaires', 'Les entreprises partenaires qui soutiennent le Marché de Noël des Artisans & Commerçants de Pamiers 2026.');
 
 export default function Mur() {
   return (
