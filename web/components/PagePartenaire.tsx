@@ -56,13 +56,6 @@ export default function PagePartenaire() {
         </div>
 
         <div className="duo" style={{marginTop:'56px'}}>
-          <div>
-            <h3 style={{fontSize:'26px',marginBottom:'12px'}}>Questions des entreprises</h3>
-            <Faq q="Est-ce déductible pour mon entreprise ?" ouvert>Il s'agit de parrainage : une dépense de publicité avec une contrepartie (logo, vidéo, mise en avant). Ce type de dépense est en principe déductible du résultat de l'entreprise. Faites valider votre cas par votre expert-comptable.</Faq>
-            <Faq q="Quand sont faites les vidéos ?">La vidéo dédiée est tournée avant le marché, chez vous, en une heure environ. Les photos et le film sont faits pendant le marché.</Faq>
-            <Faq q="Comment fonctionnent les repas ?">Après le paiement, vous recevez par e-mail un bon avec QR code. À l'accueil du marché, on vous remet un ticket par repas offert, à distribuer à vos salariés et invités. 1 ticket = 1 grande portion, dans n'importe quel stand de restauration, pendant les 3 jours.</Faq>
-            <Faq q="Quand envoyer mon logo ?">Avant le 1er décembre, pour l'impression du mur et des panneaux.</Faq>
-          </div>
           <Formulaire
             id="contact" type="partenaire"
             champs={['entreprise', 'nom', 'tel', 'email', 'salaries', 'offre', 'code_promo', 'message', 'ref']}
@@ -84,6 +77,13 @@ export default function PagePartenaire() {
             <input type="hidden" name="ref" value={ref} />
             <label>Message<textarea id="pa-msg" name="message" placeholder="Votre activité, vos questions…"></textarea></label>
           </Formulaire>
+          <div>
+            <h3 style={{fontSize:'26px',marginBottom:'12px'}}>Questions des entreprises</h3>
+            <Faq q="Est-ce déductible pour mon entreprise ?" ouvert>Il s'agit de parrainage : une dépense de publicité avec une contrepartie (logo, vidéo, mise en avant). Ce type de dépense est en principe déductible du résultat de l'entreprise. Faites valider votre cas par votre expert-comptable.</Faq>
+            <Faq q="Quand sont faites les vidéos ?">La vidéo dédiée est tournée avant le marché, chez vous, en une heure environ. Les photos et le film sont faits pendant le marché.</Faq>
+            <Faq q="Comment fonctionnent les repas ?">Après le paiement, vous recevez par e-mail un bon avec QR code. À l'accueil du marché, on vous remet un ticket par repas offert, à distribuer à vos salariés et invités. 1 ticket = 1 grande portion, dans n'importe quel stand de restauration, pendant les 3 jours.</Faq>
+            <Faq q="Quand envoyer mon logo ?">Avant le 1er décembre, pour l'impression du mur et des panneaux.</Faq>
+          </div>
         </div>
       </div></section>
     </main>
