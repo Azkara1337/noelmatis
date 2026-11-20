@@ -49,12 +49,14 @@ const COPIE_CLIENTS = 'mathilde.calero@rc-immo.com';       // copie cachée de c
 const FACTURE_PIED = 'RC IMMO · SAS · 10 B rue Jean Rostand, 09100 Pamiers · RCS Foix 892 450 172';
 const PRIX_STANDS = {'Artisanat, créations': 120, 'Producteur, terroir': 180, 'Snacking, gourmandises': 280, 'Restauration, spécialités': 420, 'Stand Premium, brasero': 590};
 const PRIX_OFFRES = {'Étoile de Noël': 200, 'Sapin Gourmand': 400, 'Maison du Père Noël': 1200, 'Partenaire Prestige': 2500};
+// Repas offerts (grande portion) inclus dans chaque offre partenaire : bon avec QR code envoyé après le paiement.
+const REPAS_OFFRES = {'Étoile de Noël': 3, 'Sapin Gourmand': 6, 'Maison du Père Noël': 20, 'Partenaire Prestige': 40};
 // =====================
 
 const ONGLETS = {
   stand: {nom: 'Stands', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['nom', 'Nom'], ['activite', 'Activité'], ['tel', 'Téléphone'], ['email', 'E-mail'], ['stand', 'Stand souhaité'], ['categorie', 'Catégorie'], ['message', 'Message'], ['code_promo', 'Code promo'], ['ref', 'Référence'], ['paiement', 'Paiement'], ['facture', 'Facture']]},
   repas: {nom: 'Repas', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['nom', 'Nom'], ['email', 'E-mail'], ['tel', 'Téléphone'], ['profil', 'Profil'], ['repas', 'Nb repas'], ['total_ttc', 'Total TTC'], ['code_promo', 'Code promo'], ['moyennes', 'Moyennes'], ['grandes', 'Grandes'], ['offerts', 'Offerts'], ['offert_type', 'Type offert'], ['ref', 'Référence'], ['paiement', 'Paiement'], ['ticket', 'Ticket'], ['retrait', 'Retrait accueil'], ['facture', 'Facture']]},
-  partenaire: {nom: 'Partenaires', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['entreprise', 'Entreprise'], ['nom', 'Contact'], ['tel', 'Téléphone'], ['email', 'E-mail'], ['salaries', 'Salariés'], ['offre', 'Offre'], ['message', 'Message'], ['code_promo', 'Code promo'], ['ref', 'Référence'], ['paiement', 'Paiement'], ['facture', 'Facture']]}
+  partenaire: {nom: 'Partenaires', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['entreprise', 'Entreprise'], ['nom', 'Contact'], ['tel', 'Téléphone'], ['email', 'E-mail'], ['salaries', 'Salariés'], ['offre', 'Offre'], ['message', 'Message'], ['code_promo', 'Code promo'], ['ref', 'Référence'], ['paiement', 'Paiement'], ['facture', 'Facture'], ['ticket', 'Bons repas'], ['retrait', 'Retrait accueil']]}
 };
 
 function installer() {
@@ -507,6 +509,7 @@ function paiementRecu(s) {
   if (l && !String(l.d.facture || '')) { try { fac = factureDe(s); } catch (err) { console.error('factureDe', err); } }
   if (ref.charAt(0) === 'R') envoyerTicketSiBesoin(ref, fac);
   if (nouveau) { try { mailsPaiement(ref, s.amount_total / 100, !s.livemode, fac); } catch (err) { console.error('mailsPaiement', err); } }
+  if (ref.charAt(0) === 'P') envoyerTicketSiBesoin(ref, null);   // partenaire : bon pour ses repas offerts
   envoyerFactureSiBesoin(ref, fac);
 }
 
@@ -566,10 +569,10 @@ function mailsPaiement(ref, montant, test, fac) {
     titre: 'Paiement bien reçu, merci !',
     paragraphes: quoi === 'stand'
       ? ['Bonjour ' + h(nom) + ',', 'Votre stand au Marché de Noël est réglé. L\'organisation vous appelle au <b>' + h(d.tel || 'numéro indiqué') + '</b> pour confirmer votre emplacement.']
-      : ['Bonjour ' + h(nom) + ',', 'Merci de soutenir le Marché de Noël ! Nous vous rappelons sous 48 h pour la suite : votre logo, les photos et vidéos, et vos repas offerts.'],
+      : ['Bonjour ' + h(nom) + ',', 'Merci de soutenir le Marché de Noël ! Nous vous rappelons sous 48 h pour la suite : votre logo, les photos et vidéos.', 'Vos <b>' + (REPAS_OFFRES[d.offre] || 0) + ' repas offerts</b> arrivent dans un e-mail séparé, avec un bon à QR code à présenter à l\'accueil.'],
     encadre: quoi === 'stand'
       ? [['Stand', h(d.categorie)], ['Emplacement souhaité', d.stand ? 'n° ' + h(d.stand) : 'pas de préférence'], ['Montant réglé', euros(montant) + ' TTC'], ['Installation', 'vendredi 18 décembre, 8 h-11 h'], ['Ouverture', 'vendredi 18 décembre, 14 h'], ['Référence', h(ref)]]
-      : [['Offre', h(d.offre)], ['Entreprise', h(d.entreprise || '')], ['Montant réglé', euros(montant) + ' TTC'], ['Logo à envoyer', 'avant le 1er décembre'], ['Référence', h(ref)]],
+      : [['Offre', h(d.offre)], ['Entreprise', h(d.entreprise || '')], ['Montant réglé', euros(montant) + ' TTC'], ['Repas offerts', '× ' + (REPAS_OFFRES[d.offre] || 0) + ' (bon envoyé à part)'], ['Logo à envoyer', 'avant le 1er décembre'], ['Référence', h(ref)]],
     note: (quoi === 'stand' ? 'La tonnelle est à décorer par vos soins, <b>sur le thème de Noël</b>. Le plus beau stand aura une surprise, remise le samedi 19 décembre !<br>' : '')
       + (libre ? '🧾 Votre facture n° ' + h(fac.numero) + ' est jointe à cet e-mail.' : '🧾 Votre facture vous est envoyée par e-mail.'),
     bouton: libre && fac.url ? {texte: 'Voir ma facture', url: fac.url} : null
@@ -889,7 +892,8 @@ function qrDataUrl(texte) {
 /** Construit le PDF du ticket et l'envoie par e-mail. */
 function envoyerTicket(d, fac) {
   const code = codeTicket(String(d.ref));
-  const m = parseInt(d.moyennes || '0', 10), g = parseInt(d.grandes || '0', 10), off = parseInt(d.offerts || '0', 10);
+  const part = String(d.ref).charAt(0) === 'P';   // partenaire : repas offerts avec son offre (grande portion)
+  const m = part ? 0 : parseInt(d.moyennes || '0', 10), g = part ? (REPAS_OFFRES[d.offre] || 0) : parseInt(d.grandes || '0', 10), off = part ? 0 : parseInt(d.offerts || '0', 10);
   const esc = function (t) { return String(t).replace(/[&<>"']/g, function (c) { return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]; }); };
   let bandeau = '';
   try {
@@ -900,20 +904,30 @@ function envoyerTicket(d, fac) {
   const html = '<html><body style="margin:0;font-family:Arial,Helvetica,sans-serif;color:#2a1a12">'
     + '<div style="width:640px;margin:0 auto;border:3px solid #c8962e;border-radius:18px;overflow:hidden">'
     + (bandeau ? '<img src="' + bandeau + '" style="width:640px;height:180px;object-fit:cover;display:block">' : '')
-    + '<div style="background:#a3180f;color:#fff;text-align:center;padding:12px 10px"><div style="font-size:26px;font-weight:bold;letter-spacing:1px">' + esc(NOM_EVENT) + ' · TICKET REPAS</div>'
+    + '<div style="background:#a3180f;color:#fff;text-align:center;padding:12px 10px"><div style="font-size:26px;font-weight:bold;letter-spacing:1px">' + esc(NOM_EVENT) + ' · ' + (part ? 'BONS REPAS PARTENAIRE' : 'TICKET REPAS') + '</div>'
     + '<div style="font-size:14px;margin-top:4px">' + esc(DATES) + ' · Pamiers</div></div>'
     + '<table style="width:100%;border-collapse:collapse"><tr>'
     + '<td style="width:58%;vertical-align:top;padding:18px 22px">'
-    + '<div style="font-size:13px;color:#6b5546">Au nom de</div><div style="font-size:20px;font-weight:bold;margin-bottom:12px">' + esc(d.nom) + '</div>'
+    + '<div style="font-size:13px;color:#6b5546">Au nom de</div><div style="font-size:20px;font-weight:bold;margin-bottom:12px">' + esc(part ? (d.entreprise || d.nom) : d.nom) + '</div>'
     + '<table style="width:100%;border-top:1px solid #ecd3a0">' + ligneRepasHtml(m, 'Repas moyenne portion') + ligneRepasHtml(g, 'Repas grande portion')
     + (off > 0 ? '<tr><td style="padding:6px 0;font-size:16px;color:#2e5e2a">Offert' + (off > 1 ? 's' : '') + ' (' + esc(String(d.offert_type || 'moyenne').toLowerCase()) + ')</td><td style="padding:6px 0;font-size:20px;font-weight:bold;text-align:right;color:#2e5e2a">× ' + off + '</td></tr>' : '')
     + '</table>'
-    + '<div style="margin-top:10px;font-size:14px">Total réglé : <b>' + esc(d.total_ttc) + ' TTC</b></div>'
-    + '<div style="margin-top:14px;font-size:12px;color:#6b5546;line-height:1.5">Présentez ce QR code à l’accueil du marché : on vous remet vos tickets, à échanger dans le stand de votre choix pendant les 3 jours. Ce QR code ne fonctionne qu’une seule fois.</div>'
+    + (part ? '<div style="margin-top:10px;font-size:14px">Offerts avec votre offre <b>« ' + esc(d.offre) + ' »</b></div>' : '<div style="margin-top:10px;font-size:14px">Total réglé : <b>' + esc(d.total_ttc) + ' TTC</b></div>')
+    + '<div style="margin-top:14px;font-size:12px;color:#6b5546;line-height:1.5">' + (part ? 'Présentez ce QR code à l’accueil du marché : on vous remet ' + g + ' tickets repas, à distribuer à vos salariés et invités. 1 ticket = 1 portion, dans le stand de leur choix, pendant les 3 jours.' : 'Présentez ce QR code à l’accueil du marché : on vous remet vos tickets, à échanger dans le stand de votre choix pendant les 3 jours.') + ' Ce QR code ne fonctionne qu’une seule fois.</div>'
     + '</td><td style="width:42%;text-align:center;vertical-align:middle;padding:14px;background:#fffaf0;border-left:2px dashed #c8962e">'
     + '<img src="' + qrDataUrl(code) + '" style="width:210px;height:210px">'
     + '<div style="font-family:Courier New,monospace;font-size:13px;margin-top:6px;letter-spacing:1px">' + esc(code) + '</div></td></tr></table></div></body></html>';
-  const pdf = Utilities.newBlob(html, 'text/html', 'ticket.html').getAs('application/pdf').setName('Ticket-repas-' + d.ref + '.pdf');
+  const pdf = Utilities.newBlob(html, 'text/html', 'ticket.html').getAs('application/pdf').setName((part ? 'Bons-repas-' : 'Ticket-repas-') + d.ref + '.pdf');
+  if (part) {
+    const nomP = String(d.nom || '').replace(/[<>]/g, '').slice(0, 60);
+    envoyerMail({to: String(d.email), subject: NOM_EVENT + ' · vos ' + g + ' bons repas', name: NOM_EVENT, attachments: [pdf],
+      body: 'Bonjour ' + nomP + ',\n\nVotre offre « ' + d.offre + ' » comprend ' + g + ' repas offerts (grande portion). Votre bon est en pièce jointe (PDF avec QR code).\n\nLe jour du marché, présentez le QR code à l\'accueil : on vous remet ' + g + ' tickets repas, à distribuer à vos salariés et invités. 1 ticket = 1 portion, dans le stand de leur choix, pendant les 3 jours.\nLe QR code ne fonctionne qu\'une seule fois.\n\nRéférence : ' + d.ref + '\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nÀ très vite,\nL\'équipe du ' + NOM_EVENT + '\n' + DATES,
+      html: gabarit({apercu: 'Vos ' + g + ' repas offerts : bon avec QR code en pièce jointe.', titre: 'Vos ' + g + ' repas offerts 🎫',
+        paragraphes: ['Bonjour ' + h(nomP) + ',', 'Votre offre <b>« ' + h(d.offre) + ' »</b> comprend <b>' + g + ' repas offerts</b>, en grande portion. Votre bon est en pièce jointe (PDF, avec QR code).'],
+        encadre: [['Entreprise', h(d.entreprise || '')], ['Repas offerts', '× ' + g + ' (grande portion)'], ['Valeur', euros(g * PRIX_GRANDE) + ' TTC'], ['Référence', h(d.ref)]],
+        note: '<b>Le jour du marché :</b> présentez le QR code à l\'accueil (sur votre téléphone ou imprimé). On vous remet <b>' + g + ' tickets repas</b>, à distribuer à vos salariés et invités : 1 ticket = 1 portion, dans le stand de leur choix, pendant les 3 jours.<br>⚠️ Le QR code ne fonctionne qu\'une seule fois.'})});
+    return;
+  }
   const corps = 'Bonjour ' + String(d.nom).replace(/[<>]/g, '') + ',\n\nMerci pour votre paiement ! Vous trouverez votre ticket repas en pièce jointe (PDF).\n\n'
     + 'Le jour du marché, présentez le QR code à l\'accueil (sur votre téléphone ou imprimé) : on vous remet vos tickets, à échanger dans le stand de votre choix.\n'
     + 'Attention : le QR code ne fonctionne qu\'une seule fois, ne le partagez pas.\n\nRéférence : ' + d.ref + '\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nÀ très vite,\nL\'équipe du ' + NOM_EVENT + '\n' + DATES;
@@ -947,7 +961,7 @@ function controlerTicket(p, retirer) {
   const acces = codeAccueilOk(p.pin);
   if (!acces.ok) return acces;
   const code = String(p.code || '').trim().toUpperCase();
-  const m = code.match(/^(R-[A-Z0-9]{8})-([0-9A-F]{12})$/);
+  const m = code.match(/^([RP]-[A-Z0-9]{8})-([0-9A-F]{12})$/);
   if (!m) return {ok: true, etat: 'faux'};
   const ref = m[1];
   // comparaison en temps constant de la signature
@@ -960,7 +974,10 @@ function controlerTicket(p, retirer) {
     lock.waitLock(10000);
     const l = ligneRepas(ref);
     if (!l) return {ok: true, etat: 'inconnu', ref: ref};
-    const info = {ok: true, ref: ref, nom: String(l.d.nom), moyennes: parseInt(l.d.moyennes || '0', 10), grandes: parseInt(l.d.grandes || '0', 10), offerts: parseInt(l.d.offerts || '0', 10), type_offert: String(l.d.offert_type || ''), retrait: String(l.d.retrait || '')};
+    const part = ref.charAt(0) === 'P';
+    const info = part
+      ? {ok: true, ref: ref, nom: String(l.d.entreprise || l.d.nom) + ' (partenaire)', moyennes: 0, grandes: REPAS_OFFRES[l.d.offre] || 0, offerts: 0, type_offert: '', retrait: String(l.d.retrait || '')}
+      : {ok: true, ref: ref, nom: String(l.d.nom), moyennes: parseInt(l.d.moyennes || '0', 10), grandes: parseInt(l.d.grandes || '0', 10), offerts: parseInt(l.d.offerts || '0', 10), type_offert: String(l.d.offert_type || ''), retrait: String(l.d.retrait || '')};
     if (!/^Payé/.test(String(l.d.paiement))) { info.etat = 'nonpaye'; return info; }
     if (info.retrait) { info.etat = 'deja'; return info; }
     if (!retirer) { info.etat = 'ok'; return info; }

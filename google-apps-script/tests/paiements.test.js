@@ -20,14 +20,14 @@ function charger(stripeRep, props = {}) {
     ContentService: { createTextOutput: t => ({ setMimeType: () => t }), MimeType: {} },
     Session: { getEffectiveUser: () => ({ getEmail: () => '' }) },
   };
-  const o = new Function(...Object.keys(g), src + '; return { ONGLETS, doPost, doGet, creerPaiement, verifierSession };')(...Object.values(g));
+  const o = new Function(...Object.keys(g), src + '; return { ONGLETS, doPost, doGet, creerPaiement, verifierSession, codeTicket };')(...Object.values(g));
   for (const k of ['stand', 'repas', 'partenaire']) feuille(o.ONGLETS[k].nom).appendRow(o.ONGLETS[k].cols.map(c => c[1]));
   const col = (k, c) => o.ONGLETS[k].cols.map(x => x[0]).indexOf(c);
   return { env, ...o, col, ligne: k => env.onglets[o.ONGLETS[k].nom][1] };
 }
 const sess = env => env.appels.find(a => /checkout\/sessions$/.test(a.url));
 const decode = s => Object.fromEntries(s.split('&').map(p => p.split('=').map(decodeURIComponent)));
-let ok = 0; const t = (nom, fn) => { try { fn(); ok++; console.log('  ✓', nom); } catch (e) { console.log('  ✗', nom, '→', e.message); process.exitCode = 1; } };
+let ok = 0; const t = (nom, fn) => { try { fn(); ok++; console.log('  ✓', nom); } catch (e) { console.log('  ✗', nom, '→', e.message, process.env.PILE ? e.stack.split('\n').slice(1, 4).join(' | ') : ''); process.exitCode = 1; } };
 const post = (c, d) => c.doPost({ postData: { contents: JSON.stringify(d) } });
 const stand = { type: 'stand', nom: 'Jean Expo', tel: '0612345678', email: 'e@x.fr', stand: '12', categorie: 'Producteur, terroir', ref: 'S-ABCD2345' };
 const parten = { type: 'partenaire', entreprise: 'Boulangerie Test', nom: 'Marie', tel: '0612345678', email: 'p@x.fr', offre: 'Sapin Gourmand', ref: 'P-ABCD2345' };
@@ -54,7 +54,7 @@ t('stand payé : « Payé 216 € (TEST) », e-mail à l\'organisation + au clie
   assert.strictEqual(c.env.mails.length, 2); assert.match(c.env.mails[0].to, /mathilde\.calero@rc-immo\.com/); assert.match(c.env.mails[0].body, /appeler l'exposant/);
   assert.strictEqual(c.env.mails[1].to, 'e@x.fr'); assert.match(c.env.mails[1].body, /216 € TTC/); assert.match(c.env.mails[1].body, /Votre facture vous est envoyée par e-mail/);
   c.verifierSession('cs_test_A'); assert.strictEqual(c.env.mails.length, 2, 'pas de 2e envoi'); });
-t('partenaire payé : e-mails envoyés, « Payé 480 € »', () => { const c = charger(paye('P-ABCD2345', 48000)); post(c, parten); c.env.mails.length = 0; c.verifierSession('cs_test_A'); assert.match(c.ligne('partenaire')[c.col('partenaire', 'paiement')], /^Payé 480 €/); assert.strictEqual(c.env.mails.length, 2); assert.match(c.env.mails[1].body, /logo/); });
+t('partenaire payé : e-mails envoyés, « Payé 480 € »', () => { const c = charger(paye('P-ABCD2345', 48000)); post(c, parten); c.env.mails.length = 0; c.verifierSession('cs_test_A'); assert.match(c.ligne('partenaire')[c.col('partenaire', 'paiement')], /^Payé 480 €/); assert.strictEqual(c.env.mails.length, 3, 'orga + confirmation + bons repas'); assert.match(c.env.mails[1].body, /logo/); });
 t('repas payé : ticket + e-mail à l\'organisation, pas de doublon', () => { const c = charger(paye('R-ABCD2345', 4000)); post(c, { type: 'repas', nom: 'Jean', email: 'r@x.fr', moyennes: '2', grandes: '1', ref: 'R-ABCD2345' }); c.env.mails.length = 0; c.verifierSession('cs_test_A'); c.verifierSession('cs_test_A'); assert.deepStrictEqual(c.env.mails.map(m => m.subject).sort(), ['Marché de Noël · paiement reçu (TEST) · 40 €', 'Marché de Noël · votre ticket repas']); });
 t('paiement d\'une référence inconnue : aucun e-mail', () => { const c = charger(paye('S-ZZZZ9999', 14400)); c.verifierSession('cs_test_A'); assert.strictEqual(c.env.mails.length, 0); });
 
@@ -133,4 +133,22 @@ t('e-mails clients : copie cachée à Mathilde (Gmail et Resend) ; e-mails inter
   assert.ok(c.env.mails.filter(m => /saveyourshoot/.test(m.to)).every(m => !m.bcc));
   const r = charger(resend(200), { RESEND_KEY: 're_FAUX' }); post(r, { type: 'repas', nom: 'Jean', email: 'r@x.fr', moyennes: '1', ref: 'R-ABCD2345' }); r.verifierSession('cs_test_A');
   const tk = r.env.appels.filter(a => /resend/.test(a.url)).map(a => JSON.parse(a.o.payload)).find(e => /ticket/.test(e.subject)); assert.deepStrictEqual(tk.bcc, ['mathilde.calero@rc-immo.com']); });
+
+console.log('Bons repas des partenaires');
+t('partenaire Sapin Gourmand payé : bon de 6 repas (PDF + QR) envoyé une seule fois', () => {
+  const c = charger(avecFacture('P-ABCD2345', 48000)); post(c, parten); c.env.mails.length = 0;
+  c.verifierSession('cs_test_A'); c.verifierSession('cs_test_A');
+  const bons = c.env.mails.filter(m => /bons repas/.test(m.subject)); assert.strictEqual(bons.length, 1);
+  assert.strictEqual(bons[0].subject, 'Marché de Noël · vos 6 bons repas'); assert.strictEqual(bons[0].to, 'p@x.fr');
+  assert.strictEqual(bons[0].attachments[0].nom || bons[0].attachments[0].getName(), 'Bons-repas-P-ABCD2345.pdf');
+  assert.match(bons[0].attachments[0].html, /BONS REPAS PARTENAIRE/); assert.match(bons[0].attachments[0].html, /Repas grande portion<\/td><td[^>]*>× 6/); assert.match(bons[0].attachments[0].html, /Boulangerie Test/);
+  assert.match(c.ligne('partenaire')[c.col('partenaire', 'ticket')], /^Envoyé le/);
+  assert.match(c.env.mails.find(m => m.subject === 'Marché de Noël · paiement bien reçu').htmlBody, /6 repas offerts/); });
+t('accueil : le QR du partenaire donne 6 grandes portions, puis DÉJÀ REMIS', () => {
+  const c = charger(avecFacture('P-ABCD2345', 48000), { ACCUEIL_CODE: '4821' }); post(c, parten); c.verifierSession('cs_test_A');
+  const code = c.codeTicket('P-ABCD2345');
+  const r1 = JSON.parse(c.doGet({ parameter: { action: 'controle', code, pin: '4821' } })); assert.deepStrictEqual([r1.etat, r1.grandes, r1.nom], ['ok', 6, 'Boulangerie Test (partenaire)']);
+  assert.strictEqual(JSON.parse(c.doGet({ parameter: { action: 'retirer', code, pin: '4821' } })).etat, 'remis');
+  assert.strictEqual(JSON.parse(c.doGet({ parameter: { action: 'retirer', code, pin: '4821' } })).etat, 'deja'); });
+t('stand payé : pas de bon repas', () => { const c = charger(avecFacture('S-ABCD2345', 21600)); post(c, stand); c.verifierSession('cs_test_A'); assert.ok(!c.env.mails.some(m => /bons repas/.test(m.subject))); });
 console.log(`\n${ok} tests réussis` + (process.exitCode ? ' — DES TESTS ÉCHOUENT' : ''));

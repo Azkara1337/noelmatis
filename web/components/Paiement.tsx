@@ -83,7 +83,7 @@ const SUITE: Record<Quoi, { merci: string; etapes: string[]; retour: string; pag
   },
   partenaire: {
     merci: 'Merci de soutenir le Marché de Noël !',
-    etapes: ['Vous recevez par e-mail la confirmation de paiement et votre facture.', 'Nous vous rappelons sous 48 h pour la suite.', 'Pensez à nous envoyer votre logo avant le 1er décembre.'],
+    etapes: ['Vous recevez par e-mail la confirmation de paiement et votre facture.', 'Vos repas offerts arrivent dans un e-mail séparé : un bon avec QR code, à présenter à l’accueil pour récupérer les tickets.', 'Nous vous rappelons sous 48 h. Pensez à nous envoyer votre logo avant le 1er décembre.'],
     retour: 'Voir le mur des partenaires', page: '/mur/',
   },
 };
