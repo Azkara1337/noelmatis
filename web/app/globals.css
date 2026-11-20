@@ -735,3 +735,25 @@ form label .facultatif{font-weight:500;color:var(--doux)}
 .retour-paie.paye{border-color:var(--sapin)!important;background:#f1f8ec!important}
 .retour-paie.paye b{color:var(--sapin)}
 .retour-paie p{margin:0;font-size:15px;color:var(--doux)}
+
+/* ===== Accueil : contrôle des tickets repas (/accueil) ===== */
+#accueil-scan{padding:28px 0 60px}
+.acc-box{max-width:520px;margin:0 auto;padding:22px;display:grid;gap:14px}
+.acc-box h1{font-size:24px;margin:0}
+.acc-box label{display:grid;gap:6px}
+.acc-haut{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.acc-lien{background:none;border:0;text-decoration:underline;cursor:pointer;color:inherit;font:inherit}
+.acc-cam{position:relative;min-height:120px;display:grid;place-items:center;background:#1d120c;border-radius:14px;overflow:hidden}
+.acc-cam video{width:100%;display:block;aspect-ratio:1;object-fit:cover}
+.acc-cam .err{color:#ffd9d4;padding:0 14px;text-align:center}
+.acc-attente{position:absolute;inset:auto 0 0 0;background:rgba(0,0,0,.65);color:#fff;text-align:center;padding:10px;font-weight:700}
+.acc-manuel{display:grid;gap:8px}
+.acc-manuel input{font-family:'Courier New',monospace;letter-spacing:1px}
+.acc-res{border-radius:16px;padding:20px;display:grid;gap:10px;color:#fff;text-align:center}
+.acc-res>b{font-size:32px;letter-spacing:1px}
+.acc-res p{margin:0}
+.acc-res ul{list-style:none;margin:0;padding:12px;background:rgba(255,255,255,.14);border-radius:12px;display:grid;gap:4px;font-size:18px}
+.acc-res.vert{background:#2e7d32}
+.acc-res.rouge{background:#b3261e}
+.acc-res.orange{background:#c56a00}
+.acc-res .btn{width:100%}

@@ -57,8 +57,8 @@ export default function ReservationRepas() {
         )}
         <ol className="etapes">
           <li><span>1</span><div><b>Je réserve et je paie en ligne</b><p className="doux">Par carte bancaire, paiement sécurisé, en deux minutes.</p></div></li>
-          <li><span>2</span><div><b>Je reçois un e-mail de confirmation</b><p className="doux">Pas de facture à attendre : l&apos;e-mail suffit.</p></div></li>
-          <li><span>3</span><div><b>Le jour J, je récupère mes tickets</b><p className="doux">Je présente l&apos;e-mail à l&apos;accueil, puis je mange au stand de mon choix, pendant les 3 jours.</p></div></li>
+          <li><span>2</span><div><b>Je reçois mon ticket par e-mail</b><p className="doux">Un PDF avec un QR code personnel, valable une seule fois. Pas de facture à attendre.</p></div></li>
+          <li><span>3</span><div><b>Le jour J, je récupère mes tickets</b><p className="doux">Je montre le QR code à l&apos;accueil (téléphone ou papier), puis je mange au stand de mon choix, pendant les 3 jours.</p></div></li>
         </ol>
       </div>
       <Formulaire
@@ -68,7 +68,7 @@ export default function ReservationRepas() {
         erreur="Indiquez votre nom, votre e-mail et au moins un repas."
         titreMerci="Réservation enregistrée"
         recap={v => `Merci ${v.nom} ! ${v.repas} repas (${v.moyennes} moyenne${+v.moyennes > 1 ? 's' : ''}, ${v.grandes} grande${+v.grandes > 1 ? 's' : ''})${+v.offerts > 0 ? ` + ${v.offerts} offert${+v.offerts > 1 ? 's' : ''} (${v.offert_type.toLowerCase()})` : ''}, total ${v.total_ttc} TTC.`}
-        finMerci={PAIEMENT_EN_LIGNE ? 'Dernière étape : réglez en ligne. Le reçu de paiement est à présenter à l’accueil pour récupérer vos tickets.' : `Le paiement en ligne ouvre très bientôt : l’organisation vous envoie le lien par e-mail. Une question ? ${TELEPHONE}.`}
+        finMerci={PAIEMENT_EN_LIGNE ? 'Dernière étape : réglez en ligne. Votre ticket avec QR code arrive par e-mail juste après, à présenter à l’accueil.' : `Le paiement en ligne ouvre très bientôt : l’organisation vous envoie le lien par e-mail. Une question ? ${TELEPHONE}.`}
         apresMerci={v => PAIEMENT_EN_LIGNE && v.ref ? <BoutonPaiement v={v} /> : null}
         bouton={<>Réserver <span id="rbtn">{nb} repas · {total}</span></>}
         apres={<p className="doux paie" style={{ fontSize: '12px' }}>{PAIEMENT}</p>}
