@@ -15,7 +15,7 @@ function charger() {
   const g = {
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => env.props[k] || null, setProperty: (k, v) => { env.props[k] = v; } }) },
     UrlFetchApp: { fetch: () => ({ getResponseCode: () => 200, getBlob: () => ({ getBytes: () => [1, 2, 3] }), getContentText: () => '{}' }) },
-    SpreadsheetApp: { getActiveSpreadsheet: () => ({ getSheetByName: () => feuille, getUrl: () => '' }) },
+    SpreadsheetApp: { getActiveSpreadsheet: () => ({ getSheetByName: n => (n === 'Partenaires' && !env.avecPartenaires ? null : feuille), getUrl: () => '' }) },
     CacheService: { getScriptCache: () => ({ get: k => env.cache[k] || null, put: (k, v) => { env.cache[k] = v; } }) },
     Utilities: {
       formatDate: (d, z, f) => /yyyy/.test(f) ? '2026121910' : '19/12 à 10:0' + (horloge++ % 10),
@@ -29,7 +29,7 @@ function charger() {
     ContentService: { createTextOutput: t => ({ setMimeType: () => t }), MimeType: {} },
     Session: { getEffectiveUser: () => ({ getEmail: () => '' }) },
   };
-  const f = new Function(...Object.keys(g), src + '; return { ONGLETS, codeTicket, signer, envoyerTicketSiBesoin, controlerTicket, doGet, qrDataUrl, qrcode };');
+  const f = new Function(...Object.keys(g), src + '; return { ONGLETS, codeTicket, signer, envoyerTicketSiBesoin, controlerTicket, rechercherTicket, doGet, qrDataUrl, qrcode };');
   const o = f(...Object.values(g));
   const cols = o.ONGLETS.repas.cols.map(c => c[0]);
   env.lignes.push(o.ONGLETS.repas.cols.map(c => c[1]));
@@ -79,4 +79,13 @@ t('signé mais pas dans le Sheet : inconnu', () => { const c = pret(); assert.st
 t('signé mais non payé : nonpaye, pas de remise', () => { const c = charger(); c.ajouter('R-ABCD2345', 'Paiement en cours'); const r = c.controlerTicket({ code: c.codeTicket('R-ABCD2345'), pin: '4821' }, true); assert.strictEqual(r.etat, 'nonpaye'); assert.strictEqual(c.val(1, 'retrait'), ''); });
 t('20 codes accueil faux par heure, puis blocage même avec le bon', () => { const { controlerTicket, code } = pret(); for (let i = 0; i < 20; i++) controlerTicket({ code, pin: '0000' }, false); assert.match(controlerTicket({ code, pin: '4821' }, false).erreur, /trop de codes faux/); });
 t('doGet ?action=controle et ?action=retirer branchés', () => { const { doGet, code } = pret(); assert.match(doGet({ parameter: { action: 'controle', code, pin: '4821' } }), /"etat":"ok"/); assert.match(doGet({ parameter: { action: 'retirer', code, pin: '4821' } }), /"etat":"remis"/); assert.match(doGet({ parameter: { action: 'retirer', code, pin: '4821' } }), /"etat":"deja"/); });
+
+console.log('Ticket perdu : recherche par nom ou e-mail');
+t('sans code accueil : refusé', () => { const { rechercherTicket } = pret(); assert.strictEqual(rechercherTicket({ q: 'jean', pin: '' }).ok, false); });
+t('nom sans accents ni majuscules : trouvé, avec le code du QR', () => { const c = pret(); c.ajouter('R-ZZZZ9999', 'Payé 10 €', { nom: 'Hélène Durand', email: 'h@d.fr' }); const r = c.rechercherTicket({ q: 'HELENE', pin: '4821' }); assert.strictEqual(r.resultats.length, 1); assert.strictEqual(r.resultats[0].ref, 'R-ZZZZ9999'); assert.strictEqual(r.resultats[0].code, c.codeTicket('R-ZZZZ9999')); assert.strictEqual(c.controlerTicket({ code: r.resultats[0].code, pin: '4821' }, false).etat, 'ok'); });
+t('par e-mail, nombre de repas et retrait', () => { const c = pret(); c.controlerTicket({ code: c.code, pin: '4821' }, true); const r = c.rechercherTicket({ q: 'a@b.f', pin: '4821' }).resultats[0]; assert.strictEqual(r.repas, 7); assert.match(r.retrait, /^Remis le/); });
+t('non payé : absent des résultats', () => { const c = charger(); c.ajouter('R-ABCD2345', 'Paiement en cours'); assert.strictEqual(c.rechercherTicket({ q: 'jean', pin: '4821' }).resultats.length, 0); });
+t('moins de 3 caractères : rien', () => { const c = pret(); assert.strictEqual(c.rechercherTicket({ q: 'je', pin: '4821' }).resultats.length, 0); });
+t('doGet ?action=recherche branché', () => { const { doGet } = pret(); assert.match(doGet({ parameter: { action: 'recherche', q: 'jean', pin: '4821' } }), /"ref":"R-ABCD2345"/); });
+
 console.log(`\n${ok} tests réussis` + (process.exitCode ? ' — DES TESTS ÉCHOUENT' : ''));

@@ -6,6 +6,7 @@ import { ENDPOINT } from '@/lib/config';
 // la signature, le paiement et que les tickets n'ont pas déjà été remis. La remise se fait en un clic, une seule fois.
 
 type Etat = 'ok' | 'remis' | 'deja' | 'nonpaye' | 'inconnu' | 'faux' | 'probleme';
+type Trouve = { ref: string; code: string; nom: string; email: string; repas: number; retrait: string };
 type Reponse = { ok: boolean; erreur?: string; etat?: Etat; ref?: string; nom?: string; moyennes?: number; grandes?: number; offerts?: number; type_offert?: string; retrait?: string };
 
 // Forme d'un code (R- ticket repas, P- bon partenaire…). Filtre grossier : c'est le script qui décide.
@@ -17,6 +18,13 @@ const CLE_PIN = 'accueil-code';
 async function appeler(action: 'controle' | 'retirer', code: string, pin: string): Promise<Reponse> {
   const u = new URL(ENDPOINT);
   u.searchParams.set('action', action); u.searchParams.set('code', code); u.searchParams.set('pin', pin);
+  const r = await fetch(u.toString());
+  return r.json();
+}
+
+async function chercher(q: string, pin: string): Promise<{ ok: boolean; erreur?: string; resultats?: Trouve[] }> {
+  const u = new URL(ENDPOINT);
+  u.searchParams.set('action', 'recherche'); u.searchParams.set('q', q); u.searchParams.set('pin', pin);
   const r = await fetch(u.toString());
   return r.json();
 }
@@ -39,6 +47,8 @@ export default function ScannerAccueil() {
   const [attente, setAttente] = useState(false);
   const [res, setRes] = useState<Reponse | null>(null);
   const [code, setCode] = useState('');
+  const [q, setQ] = useState('');
+  const [trouves, setTrouves] = useState<Trouve[] | null>(null);
   const [camera, setCamera] = useState<'off' | 'on' | 'refus'>('off');
   const video = useRef<HTMLVideoElement>(null);
   const flux = useRef<MediaStream | null>(null);
@@ -90,6 +100,19 @@ export default function ScannerAccueil() {
       setRes(r);
     } catch { setErreur('Pas de connexion : rien n’a été noté, réessayez.'); } finally { setAttente(false); }
   }
+
+  /** Ticket perdu : recherche par nom ou e-mail, puis on ouvre le ticket choisi comme s'il avait été scanné. */
+  async function rechercher(e: React.FormEvent) {
+    e.preventDefault();
+    if (q.trim().length < 3) return;
+    setAttente(true); setErreur(''); setTrouves(null);
+    try {
+      const r = await chercher(q.trim(), pin);
+      if (!r.ok) { setErreur(r.erreur || 'Erreur.'); if (/incorrect/.test(r.erreur || '')) deconnexion(); return; }
+      setTrouves(r.resultats || []);
+    } catch { setErreur('Pas de connexion. Réessayez.'); } finally { setAttente(false); }
+  }
+  function ouvrir(t: Trouve) { setTrouves(null); setQ(''); controler(t.code); }
 
   function suivant() { dernier.current.vides = 0; setRes(null); setCode(''); setErreur(''); pause.current = false; video.current?.play().catch(() => {}); }
   function deconnexion() { try { sessionStorage.removeItem(CLE_PIN); } catch {} setConnecte(false); setPin(''); setRes(null); setCode(''); remiseAZero(); arreter(); }
@@ -162,6 +185,23 @@ export default function ScannerAccueil() {
           <form className="acc-manuel" onSubmit={e => { e.preventDefault(); controler(code); }}>
             <label>Ou tapez le code sous le QR<input value={code} onChange={e => setCode(e.target.value)} placeholder="R-XXXXXXXX-XXXXXXXXXXXX ou P-…" autoCapitalize="characters" autoComplete="off" spellCheck={false} maxLength={40} /></label>
             <button className="btn" disabled={attente || !code.trim()}>Vérifier</button>
+          </form>
+          <form className="acc-cherche" onSubmit={rechercher}>
+            <label>Ticket perdu ? Cherchez par nom ou e-mail<input type="search" value={q} onChange={e => { setQ(e.target.value); setTrouves(null); }} placeholder="Ex. : Dupont ou dupont@gmail.com" autoComplete="off" spellCheck={false} maxLength={60} /></label>
+            <button className="btn" disabled={attente || q.trim().length < 3}>Rechercher</button>
+            {trouves && (trouves.length === 0
+              ? <p className="doux">Aucune réservation payée ne correspond.</p>
+              : <ul className="acc-trouves">
+                  {trouves.map(t => (
+                    <li key={t.ref}>
+                      <button type="button" onClick={() => ouvrir(t)} disabled={attente}>
+                        <b>{t.nom}</b>
+                        <span>{t.email} · {t.ref} · {t.repas} repas</span>
+                        <span className={t.retrait ? 'deja' : 'libre'}>{t.retrait ? t.retrait : 'Pas encore remis'}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>)}
           </form>
         </>
       </div>

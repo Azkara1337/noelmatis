@@ -103,6 +103,7 @@ function doGet(e) {
   if (action === 'verif') return json(verifierSession(String(e.parameter.session || '')));
   if (action === 'controle') return json(controlerTicket(e.parameter, false));
   if (action === 'retirer') return json(controlerTicket(e.parameter, true));
+  if (action === 'recherche') return json(rechercherTicket(e.parameter));
   if (action !== 'plan') return json({ok: true});
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Plan');
   const pris = {};
@@ -1053,6 +1054,39 @@ function controlerTicket(p, retirer) {
   } finally {
     lock.releaseLock();
   }
+}
+
+/**
+ * GET ?action=recherche&q=…&pin=… : ticket perdu, recherche par nom, entreprise ou e-mail (3 caractères minimum).
+ * Renvoie les réservations repas et partenaires PAYÉES qui correspondent (10 au plus), avec le code de leur QR :
+ * l'accueil ouvre ensuite le ticket comme s'il l'avait scanné (même contrôle, même remise unique).
+ */
+function rechercherTicket(p) {
+  const acces = codeAccueilOk(p.pin);
+  if (!acces.ok) return acces;
+  const simple = function (t) { return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); };
+  const q = simple(p.q).slice(0, 60);
+  if (q.length < 3) return {ok: true, resultats: []};
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), resultats = [];
+  ['repas', 'partenaire'].forEach(function (type) {
+    const o = ONGLETS[type], sh = ss.getSheetByName(o.nom);
+    if (!sh || sh.getLastRow() < 2) return;
+    entetes(sh, o);
+    const cles = o.cols.map(function (c) { return c[0]; });
+    const valeurs = sh.getRange(2, 1, sh.getLastRow() - 1, cles.length).getValues();
+    for (let i = valeurs.length - 1; i >= 0 && resultats.length < 10; i--) {
+      const d = {};
+      cles.forEach(function (k, j) { d[k] = valeurs[i][j]; });
+      const ref = String(d.ref || '');
+      if (!REF_RE.test(ref) || !/^Payé/.test(String(d.paiement))) continue;
+      if ([d.nom, d.email, d.entreprise].map(simple).join(' | ').indexOf(q) < 0) continue;
+      const part = type === 'partenaire';
+      resultats.push({ref: ref, code: codeTicket(ref), nom: part ? String(d.entreprise || d.nom) + ' (partenaire)' : String(d.nom), email: String(d.email || ''),
+        repas: part ? (REPAS_OFFRES[String(d.offre || '').trim()] || 0) : parseInt(d.moyennes || '0', 10) + parseInt(d.grandes || '0', 10) + parseInt(d.offerts || '0', 10),
+        retrait: String(d.retrait || '')});
+    }
+  });
+  return {ok: true, resultats: resultats};
 }
 
 

@@ -749,6 +749,12 @@ form label .facultatif{font-weight:500;color:var(--doux)}
 .acc-attente{position:absolute;inset:auto 0 0 0;background:rgba(0,0,0,.65);color:#fff;text-align:center;padding:10px;font-weight:700}
 .acc-manuel{display:grid;gap:8px}
 .acc-manuel input{font-family:'Courier New',monospace;letter-spacing:1px}
+.acc-cherche{display:grid;gap:8px;border-top:1px dashed rgba(0,0,0,.2);padding-top:12px}
+.acc-trouves{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.acc-trouves button{width:100%;text-align:left;display:grid;gap:2px;padding:10px 12px;border-radius:10px;border:1px solid rgba(0,0,0,.15);background:#fffaf0;color:inherit;font:inherit;cursor:pointer;overflow-wrap:anywhere}
+.acc-trouves span{font-size:13px;opacity:.8}
+.acc-trouves .libre{color:#2e7d32;opacity:1;font-weight:700}
+.acc-trouves .deja{color:#b3261e;opacity:1;font-weight:700}
 .acc-res{border-radius:16px;padding:20px;display:grid;gap:10px;color:#fff;text-align:center}
 .acc-res>b{font-size:32px;letter-spacing:1px}
 .acc-res p{margin:0}
