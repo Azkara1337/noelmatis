@@ -82,21 +82,21 @@ export default function GrilleInvites({ id }: { id?: string }) {
   );
 }
 
-/** Le réseau le plus suivi d'un invité, pour le bandeau de l'accueil. */
-function principal(v: Invite) {
+/** Réseaux d'un invité, du plus suivi au moins suivi, pour le bandeau de l'accueil (mêmes chiffres que la page Invités). */
+function parAudience(v: Invite) {
   const val = (n: string) => parseFloat(n.replace(',', '.')) * (/k/i.test(n) ? 1e3 : /m/i.test(n) ? 1e6 : 1);
-  return [...reseaux(v)].sort((a, b) => val(b.n) - val(a.n))[0];
+  return [...reseaux(v)].sort((a, b) => val(b.n) - val(a.n));
 }
 
 /** Accueil : bandeau compact qui défile (photo ronde, nom, abonnés). Survol = pause. */
 export function DefileInvites() {
   const liste = INVITES.filter(v => avatar(v));
   const pastille = (v: Invite, cle: string, cache?: boolean) => {
-    const p = principal(v);
+    const rs = parAudience(v);
     return (
       <a key={cle} className="dfl-c" href="/invites/" aria-hidden={cache || undefined} tabIndex={cache ? -1 : undefined}>
         <span className={'dfl-ph' + (!v.avatar && v.detour ? ' det' : '')}><img src={avatar(v)} alt={cache ? '' : v.nom} loading="lazy" /></span>
-        <b>{v.nom}</b>{p && <small>{ICONES[p.k]}{p.n}</small>}
+        <b>{v.nom}</b>{rs.length > 0 && <span className="dfl-rs">{rs.map(r => <small key={r.k} aria-label={`${r.n} abonnés sur ${NOMS[r.k]}`}>{ICONES[r.k]}{r.n}</small>)}</span>}
       </a>
     );
   };
