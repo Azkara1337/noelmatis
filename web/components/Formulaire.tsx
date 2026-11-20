@@ -31,14 +31,19 @@ type Props = {
   boutonClass?: string;
   /** Contenu affiché sous le message d'erreur (ex. modalités de paiement). */
   apres?: ReactNode;
+  /** Contenu ajouté sous le message de remerciement (ex. bouton de paiement), calculé à partir des valeurs envoyées. */
+  apresMerci?: (v: Valeurs) => ReactNode;
+  /** Remplace la phrase « Sans nouvelles de notre part sous 48 h… ». */
+  finMerci?: string;
   children: ReactNode;
 };
 
-export default function Formulaire({ id, className, type, champs, requis, erreur, titreMerci, recap, bouton, boutonClass = 'btn plein', apres, children }: Props) {
+export default function Formulaire({ id, className, type, champs, requis, erreur, titreMerci, recap, bouton, boutonClass = 'btn plein', apres, apresMerci, finMerci, children }: Props) {
   const [manque, setManque] = useState<string | null>(null);
   const [echec, setEchec] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   const [merci, setMerci] = useState<string | null>(null);
+  const [envoyees, setEnvoyees] = useState<Valeurs>({});
 
   // Téléphone : on empêche de taper autre chose que des chiffres, des espaces et un « + ».
   function saisie(e: FormEvent<HTMLFormElement>) {
@@ -59,7 +64,8 @@ export default function Formulaire({ id, className, type, champs, requis, erreur
     setManque(null); setEnvoi(true);
     try {
       await envoyer({ type, page: location.href, ...v });
-      setMerci(recap(v) + ` Sans nouvelles de notre part sous 48 h, appelez le ${TELEPHONE}.`);
+      setEnvoyees(v);
+      setMerci(recap(v) + ' ' + (finMerci ?? `Sans nouvelles de notre part sous 48 h, appelez le ${TELEPHONE}.`));
     } catch {
       setEchec(true);
     } finally {
@@ -77,7 +83,7 @@ export default function Formulaire({ id, className, type, champs, requis, erreur
         {apres}
         <p className="rgpd">Vos coordonnées servent uniquement à traiter votre demande et sont supprimées au plus tard le 31 janvier 2027. <a href="/confidentialite/">Données personnelles</a> · <a href="/cgu/">Conditions générales</a></p>
       </div>
-      <div className="merci" hidden={merci === null}><h3>{titreMerci}</h3><p className="doux recap">{merci}</p></div>
+      <div className="merci" hidden={merci === null}><h3>{titreMerci}</h3><p className="doux recap">{merci}</p>{merci !== null && apresMerci?.(envoyees)}</div>
     </form>
   );
 }

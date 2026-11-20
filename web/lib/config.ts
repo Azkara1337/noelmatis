@@ -33,7 +33,7 @@ export const CONDITIONS = {
   /** Annulation par l'exposant (ex. 'Remboursement intégral jusqu'au 1er décembre, aucun remboursement ensuite'). */
   annulationStand: 'Aucun remboursement en cas d’annulation par l’exposant.',
   /** Annulation ou remboursement des repas (ex. 'Les tickets ne sont ni repris ni remboursés'). */
-  annulationRepas: 'Pour modifier ou annuler une demande, appelez l’organisation avant de régler la facture.',
+  annulationRepas: 'Pour toute modification ou annulation, contactez l’organisation avant le marché.',
   /** Paiement des offres partenaires (ex. 'Sur facture, à 30 jours'). */
   paiementPartenaire: 'Sur facture envoyée par e-mail, à régler par virement.',
   /** Médiateur de la consommation (nom + site), obligatoire si l'organisateur est un professionnel qui vend aux particuliers. */
@@ -41,8 +41,10 @@ export const CONDITIONS = {
 };
 /** Date de mise à jour des pages légales. */
 export const MAJ_LEGAL = '12 novembre 2026';
-/** Texte affiché sous le bouton des repas (à valider avec l'organisation). */
-export const PAIEMENT = 'Vous recevez la facture par e-mail, à régler par virement : la réservation est confirmée dès le paiement. Vos tickets vous sont envoyés par e-mail, ou vous les retirez à l’accueil du marché.';
+/** Repas : paiement en ligne. Lien de paiement Stripe (Payment Link) avec 2 produits, « Repas moyenne portion » 10 € et « Repas grande portion » 20 €, quantités modifiables. Vide = « paiement en ligne bientôt disponible ». */
+export const PAIEMENT_REPAS_LIEN: string = '';
+/** Texte affiché sous le bouton des repas. */
+export const PAIEMENT = 'Paiement en ligne sécurisé par carte bancaire. Vous recevez ensuite un e-mail de confirmation : présentez-le à l’accueil du marché pour récupérer vos tickets repas.';
 /** Adresse finale du site, pour l'image de partage (og:image). À remplacer après la mise en ligne. */
 export const SITE_URL = 'https://www.noel-rcimmo.fr';
 

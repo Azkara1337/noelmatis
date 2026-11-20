@@ -13,8 +13,7 @@ export default function Repas() {
           <figure><img src="/img/f_aligot.jpg" alt="Aligot" /><figcaption>Aligot</figcaption></figure>
           <figure><img src="/img/f_cochon.jpg" alt="Cochon de lait" /><figcaption>Cochon de lait</figcaption></figure>
           <figure><img src="/img/f_coeur.jpg" alt="Cœur de canard" /><figcaption>Cœur de canard</figcaption></figure>
-          <figure><img src="/img/f_magret.jpg" alt="Magret de canard" /><figcaption>Magret de canard</figcaption></figure>
-          <figure className="autres"><b>…</b><figcaption>Et d'autres spécialités sur place</figcaption></figure>
+          <figure><img src="/img/f_entrecote.webp" alt="Entrecôte grillée" /><figcaption>Entrecôte</figcaption></figure>
         </div>
       </div></section>
     </main>

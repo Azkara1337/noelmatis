@@ -38,7 +38,7 @@ Les étiquettes `<span className="tbc">…</span>` signalent les infos à confir
 
 ## Règles à respecter
 - **Aucune marque d'entreprise sur l'événement :** jamais « RC IMMO » ni « BATICLICK » (c'est « l'événement de tout le monde »). Seule exception : RC IMMO apparaît dans les pages légales (`/mentions-legales`, `/confidentialite`, `/cgu`) parce que c'est l'organisateur, et la loi impose de le nommer.
-- **Paiements :** le site ne gère aucun paiement. Chaque demande arrive dans le Google Sheet, avec une notification par e-mail, et la secrétaire envoie la facture (paiement par virement). Pas de Stripe.
+- **Paiements :** repas = paiement en ligne par un lien de paiement Stripe (`PAIEMENT_REPAS_LIEN`, pas d'intégration ni de serveur), puis e-mail de confirmation à présenter à l'accueil pour retirer les tickets (pas de facture). Stands et partenaires : facture envoyée par la secrétaire, paiement par virement. Chaque demande arrive dans le Google Sheet avec une notification par e-mail.
 - **Dates :** du 18 au 20 décembre 2026 (dimanche ajouté par l'organisation le 12/11). Ne les change pas sans un message explicite de Matis.
 - **Stands :** l'exposant indique un stand souhaité, et l'organisation le confirme par téléphone. Le texte ne doit jamais dire que le stand est réservé dès l'envoi du formulaire.
 - **Chiffres :** n'invente aucun chiffre (audience, fréquentation). S'il n'a pas de source, retire-le. Sources actuelles : abonnés des invités donnés par l'organisation (document « Les influenceurs attendus », 17/11/2026), vérifiés sur les profils publics (`INVITES`) ; « +200 millions de vues par mois » et « +15 créateurs » donnés par l'organisation le 17/11 (`VUES_MOIS`, `CREATEURS`).

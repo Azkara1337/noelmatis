@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Formulaire from './Formulaire';
-import { OFFRE_REPAS, PAIEMENT, PRIX_GRANDE, PRIX_MOYENNE } from '@/lib/config';
+import { OFFRE_REPAS, PAIEMENT, PAIEMENT_REPAS_LIEN, PRIX_GRANDE, PRIX_MOYENNE, TELEPHONE } from '@/lib/config';
 
 const fmt = (v: number) => v.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' €';
 const MAX = 50;
@@ -52,9 +52,9 @@ export default function ReservationRepas() {
           </div>
         )}
         <ol className="etapes">
-          <li><span>1</span><div><b>Je fais ma demande en ligne</b><p className="doux">Le nombre de repas, en deux minutes.</p></div></li>
-          <li><span>2</span><div><b>Je reçois la facture par e-mail</b><p className="doux">Je règle par virement : ma réservation est confirmée.</p></div></li>
-          <li><span>3</span><div><b>Je reçois mes tickets et je mange sur place</b><p className="doux">Tickets par e-mail ou à l&apos;accueil, à échanger dans le stand de mon choix, pendant les 3 jours du marché.</p></div></li>
+          <li><span>1</span><div><b>Je réserve et je paie en ligne</b><p className="doux">Par carte bancaire, paiement sécurisé, en deux minutes.</p></div></li>
+          <li><span>2</span><div><b>Je reçois un e-mail de confirmation</b><p className="doux">Pas de facture à attendre : l&apos;e-mail suffit.</p></div></li>
+          <li><span>3</span><div><b>Le jour J, je récupère mes tickets</b><p className="doux">Je présente l&apos;e-mail à l&apos;accueil, puis je mange au stand de mon choix, pendant les 3 jours.</p></div></li>
         </ol>
       </div>
       <Formulaire
@@ -62,8 +62,10 @@ export default function ReservationRepas() {
         champs={['nom', 'email', 'tel', 'profil', 'repas', 'total_ttc', 'code_promo', 'moyennes', 'grandes', 'offerts', 'offert_type']}
         requis={['nom', 'email', 'repas']}
         erreur="Indiquez votre nom, votre e-mail et au moins un repas."
-        titreMerci="Demande envoyée"
-        recap={v => `Merci ${v.nom} ! Votre demande de ${v.repas} repas (${v.moyennes} moyenne${+v.moyennes > 1 ? 's' : ''}, ${v.grandes} grande${+v.grandes > 1 ? 's' : ''}, ${v.total_ttc} TTC)${+v.offerts > 0 ? ` + ${v.offerts} offert${+v.offerts > 1 ? 's' : ''} (${v.offert_type.toLowerCase()})` : ''} est bien envoyée. La facture arrive à ${v.email} : la réservation est confirmée dès le paiement.`}
+        titreMerci="Réservation enregistrée"
+        recap={v => `Merci ${v.nom} ! ${v.repas} repas (${v.moyennes} moyenne${+v.moyennes > 1 ? 's' : ''}, ${v.grandes} grande${+v.grandes > 1 ? 's' : ''})${+v.offerts > 0 ? ` + ${v.offerts} offert${+v.offerts > 1 ? 's' : ''} (${v.offert_type.toLowerCase()})` : ''}, total ${v.total_ttc} TTC.`}
+        finMerci={PAIEMENT_REPAS_LIEN ? 'Dernière étape : réglez en ligne. Une fois le paiement fait, l’e-mail de confirmation est à présenter à l’accueil pour récupérer vos tickets.' : `Le paiement en ligne ouvre très bientôt : l’organisation vous envoie le lien par e-mail. Une question ? ${TELEPHONE}.`}
+        apresMerci={v => PAIEMENT_REPAS_LIEN ? <a className="btn plein payer" href={`${PAIEMENT_REPAS_LIEN}${PAIEMENT_REPAS_LIEN.includes('?') ? '&' : '?'}prefilled_email=${encodeURIComponent(v.email)}`} target="_blank" rel="noopener">Payer {v.total_ttc} en ligne</a> : null}
         bouton={<>Réserver <span id="rbtn">{nb} repas · {total}</span></>}
         apres={<p className="doux paie" style={{ fontSize: '12px' }}>{PAIEMENT}</p>}
       >

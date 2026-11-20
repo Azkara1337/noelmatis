@@ -15,7 +15,7 @@ export default function Programme() {
           <div className="prog-stage">
             <div className="pola-col l"><figure className="pola"><img src="/img/x_prem.jpg" alt="Grillades au brasero" loading="lazy" /></figure><figure className="pola"><img src="/img/resto.jpg" alt="Aligot servi au stand" loading="lazy" /></figure><figure className="pola"><img src="/img/arti.jpg" alt="Stand d'artisanat" loading="lazy" /></figure></div>
             <img className="chest" src="/img/d_chest.webp" alt="Un coffre au trésor qui s'ouvre" />
-            <div className="pola-col r"><figure className="pola"><img src="/img/d_santa.webp" alt="Le Père Noël garde le secret" loading="lazy" /></figure><figure className="pola"><img src="/img/salle.jpg" alt="Le château gonflable" loading="lazy" /></figure><figure className="pola"><img src="/img/d_crowd.webp" alt="Ambiance du marché" loading="lazy" /></figure></div>
+            <div className="pola-col r"><figure className="pola"><img src="/img/d_santa.webp" alt="Le Père Noël garde le secret" loading="lazy" /></figure><figure className="pola"><img src="/img/chateau.webp" alt="Le château gonflable du marché" loading="lazy" /></figure><figure className="pola"><img src="/img/d_crowd.webp" alt="Ambiance du marché" loading="lazy" /></figure></div>
           </div>
         </div>
         <ProgrammeCompteur />
