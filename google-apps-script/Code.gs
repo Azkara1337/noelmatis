@@ -958,7 +958,8 @@ function envoyerTicket(d, fac) {
   const code = codeTicket(String(d.ref));
   const part = String(d.ref).charAt(0) === 'P';   // partenaire : repas offerts avec son offre (grande portion)
   const m = part ? 0 : parseInt(d.moyennes || '0', 10), g = part ? (REPAS_OFFRES[String(d.offre || '').trim()] || 0) : parseInt(d.grandes || '0', 10), off = part ? 0 : parseInt(d.offerts || '0', 10);
-  if (part && !g) throw new Error('offre partenaire sans nombre de repas : ' + d.offre);   // pas de bon « 0 repas » (colonne Bons repas laissée vide)
+  if (part && !g) throw new Error('offre partenaire sans nombre de repas : ' + d.offre);
+  const entrees = m + g + off;   // 1 plat = 1 entrée gratuite (demande de l'organisation, 20/11)   // pas de bon « 0 repas » (colonne Bons repas laissée vide)
   const esc = function (t) { return String(t).replace(/[&<>"']/g, function (c) { return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]; }); };
   let bandeau = '';
   try {
@@ -976,6 +977,7 @@ function envoyerTicket(d, fac) {
     + '<div style="font-size:13px;color:#6b5546">Au nom de</div><div style="font-size:20px;font-weight:bold;margin-bottom:12px">' + esc(part ? (d.entreprise || d.nom) : d.nom) + '</div>'
     + '<table style="width:100%;border-top:1px solid #ecd3a0">' + ligneRepasHtml(m, 'Repas moyenne portion') + ligneRepasHtml(g, 'Repas grande portion')
     + (off > 0 ? '<tr><td style="padding:6px 0;font-size:16px;color:#2e5e2a">Offert' + (off > 1 ? 's' : '') + ' (' + esc(String(d.offert_type || 'moyenne').toLowerCase()) + ')</td><td style="padding:6px 0;font-size:20px;font-weight:bold;text-align:right;color:#2e5e2a">× ' + off + '</td></tr>' : '')
+    + '<tr><td style="padding:6px 0;font-size:16px;color:#a3180f;border-top:1px solid #ecd3a0">Entrées gratuites au marché</td><td style="padding:6px 0;font-size:20px;font-weight:bold;text-align:right;color:#a3180f;border-top:1px solid #ecd3a0">× ' + entrees + '</td></tr>'
     + '</table>'
     + (part ? '<div style="margin-top:10px;font-size:14px">Offerts avec votre offre <b>« ' + esc(d.offre) + ' »</b></div>' : '<div style="margin-top:10px;font-size:14px">Total réglé : <b>' + esc(d.total_ttc) + ' TTC</b></div>')
     + '<div style="margin-top:14px;font-size:12px;color:#6b5546;line-height:1.5">' + (part ? 'Présentez ce QR code à l’accueil du marché : on vous remet ' + g + ' tickets repas, à distribuer à vos salariés et invités. 1 ticket = 1 portion, dans le stand de leur choix, pendant les 3 jours.' : 'Présentez ce QR code à l’accueil du marché : on vous remet vos tickets, à échanger dans le stand de votre choix pendant les 3 jours.') + ' Ce QR code ne fonctionne qu’une seule fois.</div>'
@@ -989,18 +991,19 @@ function envoyerTicket(d, fac) {
       body: 'Bonjour ' + nomP + ',\n\nVotre offre « ' + d.offre + ' » comprend ' + g + ' repas offerts (grande portion). Votre bon est en pièce jointe (PDF avec QR code).\n\nLe jour du marché, présentez le QR code à l\'accueil : on vous remet ' + g + ' tickets repas, à distribuer à vos salariés et invités. 1 ticket = 1 portion, dans le stand de leur choix, pendant les 3 jours.\nLe QR code ne fonctionne qu\'une seule fois.\n\nRéférence : ' + d.ref + '\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nÀ très vite,\nL\'équipe du ' + NOM_EVENT + '\n' + DATES,
       html: gabarit({apercu: 'Vos ' + g + ' repas offerts : bon avec QR code en pièce jointe.', titre: 'Vos ' + g + ' repas offerts 🎫',
         paragraphes: ['Bonjour ' + h(nomP) + ',', 'Votre offre <b>« ' + h(d.offre) + ' »</b> comprend <b>' + g + ' repas offerts</b>, en grande portion. Votre bon est en pièce jointe (PDF, avec QR code).'],
-        encadre: [['Entreprise', h(d.entreprise || '')], ['Repas offerts', '× ' + g + ' (grande portion)'], ['Valeur', euros(g * PRIX_GRANDE) + ' TTC'], ['Référence', h(d.ref)]],
+        encadre: [['Entreprise', h(d.entreprise || '')], ['Repas offerts', '× ' + g + ' (grande portion)'], ['Entrées gratuites', '× ' + entrees + ' (1 plat = 1 entrée)'], ['Valeur', euros(g * PRIX_GRANDE) + ' TTC'], ['Référence', h(d.ref)]],
         note: '<b>Le jour du marché :</b> présentez le QR code à l\'accueil (sur votre téléphone ou imprimé). On vous remet <b>' + g + ' tickets repas</b>, à distribuer à vos salariés et invités : 1 ticket = 1 portion, dans le stand de leur choix, pendant les 3 jours.<br>⚠️ Le QR code ne fonctionne qu\'une seule fois.'})});
     return;
   }
   const corps = 'Bonjour ' + String(d.nom).replace(/[<>]/g, '') + ',\n\nMerci pour votre paiement ! Vous trouverez votre ticket repas en pièce jointe (PDF).\n\n'
     + 'Le jour du marché, présentez le QR code à l\'accueil (sur votre téléphone ou imprimé) : on vous remet vos tickets, à échanger dans le stand de votre choix.\n'
+    + 'Votre ticket donne ' + entrees + ' entrée' + (entrees > 1 ? 's' : '') + ' gratuite' + (entrees > 1 ? 's' : '') + ' au marché (1 plat = 1 entrée).\n'
     + 'Attention : le QR code ne fonctionne qu\'une seule fois, ne le partagez pas.\n\nRéférence : ' + d.ref + '\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nÀ très vite,\nL\'équipe du ' + NOM_EVENT + '\n' + DATES;
   const htmlMail = gabarit({
     apercu: 'Votre ticket repas avec QR code est en pièce jointe.',
     titre: 'Votre ticket repas 🎫',
     paragraphes: ['Bonjour ' + h(String(d.nom).slice(0, 60)) + ',', 'Merci pour votre paiement ! Votre <b>ticket repas</b> est en pièce jointe (PDF, avec votre QR code).'],
-    encadre: [['Moyennes portions', m > 0 ? '× ' + m : ''], ['Grandes portions', g > 0 ? '× ' + g : ''], ['Repas offerts', off > 0 ? '× ' + off + ' (' + h(String(d.offert_type || 'moyenne').toLowerCase()) + ')' : ''], ['Total réglé', h(d.total_ttc) + ' TTC'], ['Référence', h(d.ref)]],
+    encadre: [['Moyennes portions', m > 0 ? '× ' + m : ''], ['Grandes portions', g > 0 ? '× ' + g : ''], ['Repas offerts', off > 0 ? '× ' + off + ' (' + h(String(d.offert_type || 'moyenne').toLowerCase()) + ')' : ''], ['Entrées gratuites', '× ' + entrees + ' (1 plat = 1 entrée)'], ['Total réglé', h(d.total_ttc) + ' TTC'], ['Référence', h(d.ref)]],
     note: '<b>Le jour du marché :</b> présentez le QR code à l\'accueil (sur votre téléphone ou imprimé). On vous remet vos tickets, à échanger dans le stand de votre choix pendant les 3 jours.<br>⚠️ Le QR code ne fonctionne qu\'une seule fois : ne le partagez pas.' + (fac ? '<br>🧾 Votre facture n° ' + h(fac.numero) + ' est également jointe.' : '')
   });
   envoyerMail({to: String(d.email), subject: NOM_EVENT + ' · votre ticket repas', body: corps + (fac ? '\n\nVotre facture n° ' + fac.numero + ' est également jointe.' : ''), html: htmlMail, name: NOM_EVENT, attachments: fac ? [pdf, fac.pdf] : [pdf]});

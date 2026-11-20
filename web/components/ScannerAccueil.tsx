@@ -216,6 +216,7 @@ export default function ScannerAccueil() {
               {!!res.moyennes && <li><b>{res.moyennes}</b> moyenne{res.moyennes > 1 ? 's' : ''} portion{res.moyennes > 1 ? 's' : ''}</li>}
               {!!res.grandes && <li><b>{res.grandes}</b> grande{res.grandes > 1 ? 's' : ''} portion{res.grandes > 1 ? 's' : ''}</li>}
               {!!res.offerts && <li><b>+ {res.offerts}</b> offert{res.offerts > 1 ? 's' : ''} ({(res.type_offert || 'moyenne').toLowerCase()})</li>}
+              {(() => { const e = (res.moyennes || 0) + (res.grandes || 0) + (res.offerts || 0); return e > 0 && <li className="acc-entrees"><b>{e}</b> entrée{e > 1 ? 's' : ''} gratuite{e > 1 ? 's' : ''} au marché</li>; })()}
             </ul>
           )}
           {etat === 'ok' && <button type="button" className="btn plein" disabled={attente} onClick={remettre}>{attente ? 'Enregistrement…' : 'Remettre les tickets'}</button>}

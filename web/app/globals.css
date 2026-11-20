@@ -808,3 +808,4 @@ form label .facultatif{font-weight:500;color:var(--doux)}
 /* 1 repas = 1 entrée (20/11) */
 .entree-libre{margin-top:8px;font:800 15px/1.3 var(--fc);color:var(--sapin)}
 .rep-entree{margin:0;font:600 14px/1.4 var(--fc);color:var(--doux)}.rep-entree b{color:var(--sapin)}
+.acc-entrees{font-weight:800;color:var(--sapin)}
