@@ -787,3 +787,5 @@ form label .facultatif{font-weight:500;color:var(--doux)}
 .p404-n span{display:inline-block;color:var(--or);font-size:.8em;margin:0 .04em;animation:p404 6s linear infinite}
 @keyframes p404{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.p404-n span,.paie-carte.verif .paie-ic{animation:none}}
+.acc-scan{display:grid;gap:14px}
+.acc-scan[hidden]{display:none}

@@ -76,7 +76,7 @@ export default function ScannerAccueil() {
     } catch { setErreur('Pas de connexion : rien n’a été noté, réessayez.'); } finally { setAttente(false); }
   }
 
-  function suivant() { setRes(null); setCode(''); setErreur(''); pause.current = false; }
+  function suivant() { setRes(null); setCode(''); setErreur(''); pause.current = false; video.current?.play().catch(() => {}); }
   function deconnexion() { try { sessionStorage.removeItem(CLE_PIN); } catch {} setConnecte(false); setPin(''); arreter(); }
 
   function arreter() { flux.current?.getTracks().forEach(t => t.stop()); flux.current = null; setCamera('off'); }
@@ -129,7 +129,8 @@ export default function ScannerAccueil() {
     <div className="acc-box carte">
       <div className="acc-haut"><h1>Contrôle des tickets</h1><button type="button" className="acc-lien" onClick={deconnexion}>Quitter</button></div>
 
-      {!res && (
+      {/* La vidéo reste toujours en place (masquée pendant un résultat) : sinon, au scan suivant, l'image reste noire. */}
+      <div className="acc-scan" hidden={!!res}>
         <>
           <div className="acc-cam">
             {camera === 'on' ? <video ref={video} playsInline muted /> : (
@@ -143,7 +144,7 @@ export default function ScannerAccueil() {
             <button className="btn" disabled={attente || !code.trim()}>Vérifier</button>
           </form>
         </>
-      )}
+      </div>
 
       {res && etat && (
         <div className={'acc-res ' + COULEUR[etat]} role="status">
