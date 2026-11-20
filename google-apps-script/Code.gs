@@ -40,7 +40,7 @@ const OFFRE_LOT = 5, OFFRE_FIN = '2026-12-10T23:59:59+01:00';
 const SITE = 'https://www.noel-rcimmo.fr';      // adresse du site, pour le retour après paiement Stripe
 // Stands et offres partenaires : prix HT (mêmes valeurs que web/lib/config.ts). Le client paie le TTC (TVA ci-dessous).
 const TVA = 0.20;                 // stands et offres partenaires (prix HT + TVA)
-const TVA_REPAS = 0.20;           // repas : prix TTC, TVA comprise (20 %, confirmé par l'organisation le 20/11)
+const TVA_REPAS = 0.10;           // repas : prix TTC, TVA comprise à 10 % (restauration, confirmé par l'organisation le 20/11 ; l'alcool serait à 20 %, non vendu ici)
 // Pied de page des factures Stripe. Le capital et le n° de TVA vont dans la propriété du script FACTURE_MENTIONS (pas dans le code).
 // E-mails : par Resend si la propriété RESEND_KEY existe (adresse du site, pas de limite Gmail), sinon par Gmail.
 const EXPEDITEUR_DEFAUT = 'billetterie@noel-rcimmo.fr';   // adresse d'envoi (domaine vérifié dans Resend) ; modifiable : propriété RESEND_FROM
