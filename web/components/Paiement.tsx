@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { ENDPOINT, MAIL_FACTURE, TELEPHONE } from '@/lib/config';
+import { ENDPOINT, TELEPHONE } from '@/lib/config';
 import type { Valeurs } from './Formulaire';
 
 export type Quoi = 'repas' | 'stand' | 'partenaire';
@@ -71,7 +71,7 @@ export function RetourPaiement({ quoi = 'repas' }: { quoi?: Quoi }) {
   if (!etat) return null;
   const textes = {
     verif: ['Vérification du paiement…', ''],
-    paye: ['Paiement confirmé ✓', `Merci ! ${total ? total + ' réglés. ' : ''}${MERCI[quoi]} Besoin d’une facture ? Écrivez à ${MAIL_FACTURE}.`],
+    paye: ['Paiement confirmé ✓', `Merci ! ${total ? total + ' réglés. ' : ''}${MERCI[quoi]} Votre facture vous est envoyée automatiquement par e-mail.`],
     nonpaye: ['Paiement non finalisé', `Votre paiement n’a pas abouti. Vous pouvez refaire votre demande ci-dessous, ou appeler le ${TELEPHONE}.`],
     annule: ['Paiement annulé', 'Aucun montant n’a été débité. Vous pouvez refaire votre demande ci-dessous quand vous voulez.'],
     erreur: ['Paiement à vérifier', `Nous n’avons pas pu vérifier le paiement automatiquement. Si vous avez été débité, tout est bon : l’organisation le verra. Une question ? ${TELEPHONE}.`],

@@ -26,8 +26,6 @@ export const ENDPOINT = 'https://script.google.com/macros/s/AKfycbw5eFSO-WeJ96vZ
 export const ORGANISATEUR = { nom: 'RC IMMO', statut: 'Société par actions simplifiée (SAS)', capital: '', adresse: '10 B rue Jean Rostand, 09100 Pamiers', immatriculation: 'RCS Foix 892 450 172', directeur: 'Bertrand Vettes' };
 /** E-mail de contact (questions, données personnelles). */
 export const CONTACT_MAIL = 'mathilde.calero@rc-immo.com';
-/** Adresse à qui les clients demandent leur facture (stands, partenaires, repas). Même valeur que MAIL_FACTURE dans Code.gs. */
-export const MAIL_FACTURE = 'mathilde.calero@rc-immo.com';
 /** TVA appliquée aux stands et aux offres partenaires (prix affichés HT, payés TTC). */
 export const TVA = 0.2;
 /** Prix HT des stands par catégorie (valeur du champ « categorie »). Mêmes valeurs que PRIX_STANDS dans Code.gs. */
@@ -39,13 +37,13 @@ export const ttc = (ht: number) => Math.round(ht * (1 + TVA) * 100) / 100;
 /** Conditions de réservation affichées dans les CGU. Vide = « à compléter ». */
 export const CONDITIONS = {
   /** Paiement des stands : quand et comment (ex. 'Acompte de 50 % à la confirmation, solde le jour de l'installation, par virement ou chèque'). */
-  paiementStand: 'En ligne, par carte bancaire, au moment de la demande (prix affichés HT, payés TTC avec la TVA à 20 %). L’organisation appelle ensuite l’exposant pour confirmer son emplacement ; si le stand souhaité n’est plus libre, un autre emplacement lui est proposé ou il est remboursé. La facture est envoyée sur simple demande par e-mail à mathilde.calero@rc-immo.com.',
+  paiementStand: 'En ligne, par carte bancaire, au moment de la demande (prix affichés HT, payés TTC avec la TVA à 20 %). L’organisation appelle ensuite l’exposant pour confirmer son emplacement ; si le stand souhaité n’est plus libre, un autre emplacement lui est proposé ou il est remboursé. La facture est envoyée automatiquement par e-mail après le paiement.',
   /** Annulation par l'exposant (ex. 'Remboursement intégral jusqu'au 1er décembre, aucun remboursement ensuite'). */
   annulationStand: 'Aucun remboursement en cas d’annulation par l’exposant.',
   /** Annulation ou remboursement des repas (ex. 'Les tickets ne sont ni repris ni remboursés'). */
-  annulationRepas: 'Les repas se règlent en ligne, sur le site. La facture est envoyée sur simple demande par e-mail à mathilde.calero@rc-immo.com. Pour toute question sur une réservation, contactez l’organisation.',
+  annulationRepas: 'Les repas se règlent en ligne, sur le site. La facture est envoyée automatiquement par e-mail avec le ticket. Pour toute question sur une réservation, contactez l’organisation.',
   /** Paiement des offres partenaires (ex. 'Sur facture, à 30 jours'). */
-  paiementPartenaire: 'En ligne, par carte bancaire, au moment de la demande (prix affichés HT, payés TTC avec la TVA à 20 %). La facture est envoyée sur simple demande par e-mail à mathilde.calero@rc-immo.com.',
+  paiementPartenaire: 'En ligne, par carte bancaire, au moment de la demande (prix affichés HT, payés TTC avec la TVA à 20 %). La facture est envoyée automatiquement par e-mail après le paiement.',
   /** Médiateur de la consommation (nom + site), obligatoire si l'organisateur est un professionnel qui vend aux particuliers. */
   mediateur: '',
 };
@@ -54,7 +52,7 @@ export const MAJ_LEGAL = '12 novembre 2026';
 /** Repas : paiement en ligne par Stripe, créé par le script Google (clé STRIPE_SECRET dans les propriétés du script). false = « paiement en ligne bientôt disponible ». */
 export const PAIEMENT_EN_LIGNE: boolean = true;   // à passer à true après les tests réels avec la clé Stripe
 /** Texte affiché sous le bouton des repas. */
-export const PAIEMENT = 'Paiement en ligne sécurisé par carte bancaire. Vous recevez ensuite votre ticket avec QR code par e-mail : présentez-le à l’accueil du marché pour récupérer vos tickets repas. Facture sur demande à mathilde.calero@rc-immo.com.';
+export const PAIEMENT = 'Paiement en ligne sécurisé par carte bancaire. Vous recevez ensuite votre ticket avec QR code par e-mail : présentez-le à l’accueil du marché pour récupérer vos tickets repas. La facture est jointe automatiquement.';
 /** Adresse finale du site, pour l'image de partage (og:image). À remplacer après la mise en ligne. */
 export const SITE_URL = 'https://www.noel-rcimmo.fr';
 

@@ -28,7 +28,6 @@
 
 // ===== à remplir =====
 const NOTIFIER = 'saveyourshoot@gmail.com,mathilde.calero@rc-immo.com';   // adresses qui reçoivent chaque demande et chaque paiement, séparées par une virgule.
-const MAIL_FACTURE = 'mathilde.calero@rc-immo.com';   // adresse à qui les clients demandent leur facture
 const NOM_EVENT = 'Marché de Noël';
 const DATES = 'vendredi 18, samedi 19 et dimanche 20 décembre 2026';
 const TELEPHONE = '05 34 03 24 40';
@@ -37,15 +36,18 @@ const PRIX_MOYENNE = 10, PRIX_GRANDE = 20;           // repas, en € TTC (même
 const OFFRE_LOT = 5, OFFRE_FIN = '2026-12-10T23:59:59+01:00';
 const SITE = 'https://www.noel-rcimmo.fr';      // adresse du site, pour le retour après paiement Stripe
 // Stands et offres partenaires : prix HT (mêmes valeurs que web/lib/config.ts). Le client paie le TTC (TVA ci-dessous).
-const TVA = 0.20;
+const TVA = 0.20;                 // stands et offres partenaires (prix HT + TVA)
+const TVA_REPAS = 0.10;           // repas : prix TTC, TVA comprise (taux de la restauration, à confirmer par le comptable)
+// Pied de page des factures Stripe. Le capital et le n° de TVA vont dans la propriété du script FACTURE_MENTIONS (pas dans le code).
+const FACTURE_PIED = 'RC IMMO · SAS · 10 B rue Jean Rostand, 09100 Pamiers · RCS Foix 892 450 172';
 const PRIX_STANDS = {'Artisanat, créations': 120, 'Producteur, terroir': 180, 'Snacking, gourmandises': 280, 'Restauration, spécialités': 420, 'Stand Premium, brasero': 590};
 const PRIX_OFFRES = {'Étoile de Noël': 200, 'Sapin Gourmand': 400, 'Maison du Père Noël': 1200, 'Partenaire Prestige': 2500};
 // =====================
 
 const ONGLETS = {
-  stand: {nom: 'Stands', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['nom', 'Nom'], ['activite', 'Activité'], ['tel', 'Téléphone'], ['email', 'E-mail'], ['stand', 'Stand souhaité'], ['categorie', 'Catégorie'], ['message', 'Message'], ['code_promo', 'Code promo'], ['ref', 'Référence'], ['paiement', 'Paiement']]},
-  repas: {nom: 'Repas', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['nom', 'Nom'], ['email', 'E-mail'], ['tel', 'Téléphone'], ['profil', 'Profil'], ['repas', 'Nb repas'], ['total_ttc', 'Total TTC'], ['code_promo', 'Code promo'], ['moyennes', 'Moyennes'], ['grandes', 'Grandes'], ['offerts', 'Offerts'], ['offert_type', 'Type offert'], ['ref', 'Référence'], ['paiement', 'Paiement'], ['ticket', 'Ticket'], ['retrait', 'Retrait accueil']]},
-  partenaire: {nom: 'Partenaires', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['entreprise', 'Entreprise'], ['nom', 'Contact'], ['tel', 'Téléphone'], ['email', 'E-mail'], ['salaries', 'Salariés'], ['offre', 'Offre'], ['message', 'Message'], ['code_promo', 'Code promo'], ['ref', 'Référence'], ['paiement', 'Paiement']]}
+  stand: {nom: 'Stands', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['nom', 'Nom'], ['activite', 'Activité'], ['tel', 'Téléphone'], ['email', 'E-mail'], ['stand', 'Stand souhaité'], ['categorie', 'Catégorie'], ['message', 'Message'], ['code_promo', 'Code promo'], ['ref', 'Référence'], ['paiement', 'Paiement'], ['facture', 'Facture']]},
+  repas: {nom: 'Repas', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['nom', 'Nom'], ['email', 'E-mail'], ['tel', 'Téléphone'], ['profil', 'Profil'], ['repas', 'Nb repas'], ['total_ttc', 'Total TTC'], ['code_promo', 'Code promo'], ['moyennes', 'Moyennes'], ['grandes', 'Grandes'], ['offerts', 'Offerts'], ['offert_type', 'Type offert'], ['ref', 'Référence'], ['paiement', 'Paiement'], ['ticket', 'Ticket'], ['retrait', 'Retrait accueil'], ['facture', 'Facture']]},
+  partenaire: {nom: 'Partenaires', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['entreprise', 'Entreprise'], ['nom', 'Contact'], ['tel', 'Téléphone'], ['email', 'E-mail'], ['salaries', 'Salariés'], ['offre', 'Offre'], ['message', 'Message'], ['code_promo', 'Code promo'], ['ref', 'Référence'], ['paiement', 'Paiement'], ['facture', 'Facture']]}
 };
 
 function installer() {
@@ -200,8 +202,11 @@ function doPost(e) {
     lock.releaseLock();
   }
   // La ligne est enregistrée : un souci d'e-mail (quota Gmail…) ne doit pas faire échouer la demande.
-  try { prevenir(d, o); } catch (err) { console.error('prevenir', err); }
-  try { confirmer(d); } catch (err) { console.error('confirmer', err); }
+  // Repas avec référence : l'organisation est prévenue au paiement et le ticket sert de confirmation (économise le quota Gmail).
+  if (!(d.type === 'repas' && d.ref)) {
+    try { prevenir(d, o); } catch (err) { console.error('prevenir', err); }
+    try { confirmer(d); } catch (err) { console.error('confirmer', err); }
+  }
   return json({ok: true});
 }
 
@@ -299,8 +304,35 @@ function calculRepas(m, g) {
   return {offerts: offerts, total: m * PRIX_MOYENNE + g * PRIX_GRANDE};
 }
 
-/** Montant TTC en centimes à partir d'un prix HT. */
-function centimesTTC(ht) { return Math.round(ht * (1 + TVA) * 100); }
+/** Taux de TVA Stripe (créé une fois, gardé dans les propriétés du script, séparément pour le mode test et le mode réel). */
+function tauxTVA(taux, inclus) {
+  const props = PropertiesService.getScriptProperties();
+  const cle = 'TXR_' + (/^(sk|rk)_live_/.test(cleStripe()) ? 'LIVE' : 'TEST') + '_' + Math.round(taux * 100) + (inclus ? 'I' : 'E');
+  let id = props.getProperty(cle);
+  if (!id) {
+    id = stripe('post', 'tax_rates', {display_name: 'TVA', percentage: Math.round(taux * 10000) / 100, inclusive: inclus, country: 'FR', description: 'TVA ' + Math.round(taux * 100) + ' %' + (inclus ? ' incluse' : '')}).id;
+    props.setProperty(cle, id);
+  }
+  return id;
+}
+
+/** Mentions légales en bas des factures (capital et n° de TVA : propriété FACTURE_MENTIONS). */
+function piedFacture() {
+  const plus = PropertiesService.getScriptProperties().getProperty('FACTURE_MENTIONS') || '';
+  return (FACTURE_PIED + (plus ? ' · ' + plus : '')).slice(0, 5000);
+}
+
+/** Facture Stripe d'une session payée : {numero, pdf (fichier), url}, ou null si elle n'est pas encore prête. */
+function factureDe(s) {
+  let f = s.invoice;
+  if (!f) return null;
+  if (typeof f === 'string') f = stripe('get', 'invoices/' + encodeURIComponent(f));
+  if (!f || !f.invoice_pdf) return null;
+  const r = UrlFetchApp.fetch(f.invoice_pdf, {muteHttpExceptions: true, followRedirects: true});
+  if (r.getResponseCode() !== 200) return null;
+  return {numero: String(f.number || ''), url: String(f.hosted_invoice_url || ''), pdf: r.getBlob().setName('Facture-' + (f.number || 'Marche-de-Noel') + '.pdf')};
+}
+
 
 /**
  * GET ?action=paiement&quoi=repas&m=2&g=1&type=Moyenne&email=…&ref=R-XXXXXXXX
@@ -324,8 +356,9 @@ function creerPaiement(p) {
       if (!(m >= 0 && m <= 99 && g >= 0 && g <= 99 && m + g > 0)) return {ok: false, erreur: 'nombre de repas invalide'};
       const c = calculRepas(m, g);
       const typeOffert = c.offerts > 0 ? (p.type === 'Grande' ? 'grande' : 'moyenne') : '';
-      if (m) lignes.push({price_data: {currency: 'eur', unit_amount: PRIX_MOYENNE * 100, product_data: {name: 'Repas · moyenne portion'}}, quantity: m});
-      if (g) lignes.push({price_data: {currency: 'eur', unit_amount: PRIX_GRANDE * 100, product_data: {name: 'Repas · grande portion'}}, quantity: g});
+      const tvaR = [tauxTVA(TVA_REPAS, true)];
+      if (m) lignes.push({price_data: {currency: 'eur', unit_amount: PRIX_MOYENNE * 100, product_data: {name: 'Repas · moyenne portion'}}, quantity: m, tax_rates: tvaR});
+      if (g) lignes.push({price_data: {currency: 'eur', unit_amount: PRIX_GRANDE * 100, product_data: {name: 'Repas · grande portion'}}, quantity: g, tax_rates: tvaR});
       if (c.offerts > 0) lignes[0].price_data.product_data.description = '+ ' + c.offerts + ' repas offert' + (c.offerts > 1 ? 's' : '') + ' (' + typeOffert + ' portion), remis à l\'accueil';
       Object.assign(meta, {moyennes: m, grandes: g, offerts: c.offerts, type_offert: typeOffert});
     } else if (quoi === 'stand') {
@@ -333,12 +366,12 @@ function creerPaiement(p) {
       if (!Object.prototype.hasOwnProperty.call(PRIX_STANDS, cat)) return {ok: false, erreur: 'catégorie de stand invalide'};
       const n = String(p.stand || '');
       if (n && !/^([1-9]|[12]\d|30)$/.test(n)) return {ok: false, erreur: 'numéro de stand invalide'};
-      lignes.push({price_data: {currency: 'eur', unit_amount: centimesTTC(PRIX_STANDS[cat]), product_data: {name: 'Stand 3 × 3 m · ' + cat + ' · 18, 19 et 20 décembre', description: (n ? 'Stand n° ' + n + ' souhaité. ' : '') + 'Emplacement confirmé par téléphone par l\'organisation. ' + PRIX_STANDS[cat] + ' € HT + TVA 20 %.'}}, quantity: 1});
+      lignes.push({price_data: {currency: 'eur', unit_amount: PRIX_STANDS[cat] * 100, product_data: {name: 'Stand 3 × 3 m · ' + cat + ' · 18, 19 et 20 décembre', description: (n ? 'Stand n° ' + n + ' souhaité. ' : '') + 'Emplacement confirmé par téléphone par l\'organisation.'}}, quantity: 1, tax_rates: [tauxTVA(TVA, false)]});
       Object.assign(meta, {categorie: cat, stand: n});
     } else {
       const offre = String(p.offre || '');
       if (!Object.prototype.hasOwnProperty.call(PRIX_OFFRES, offre)) return {ok: false, erreur: 'offre invalide'};
-      lignes.push({price_data: {currency: 'eur', unit_amount: centimesTTC(PRIX_OFFRES[offre]), product_data: {name: 'Offre partenaire « ' + offre + ' » · ' + NOM_EVENT + ' 2026', description: PRIX_OFFRES[offre] + ' € HT + TVA 20 %.'}}, quantity: 1});
+      lignes.push({price_data: {currency: 'eur', unit_amount: PRIX_OFFRES[offre] * 100, product_data: {name: 'Offre partenaire « ' + offre + ' » · ' + NOM_EVENT + ' 2026'}}, quantity: 1, tax_rates: [tauxTVA(TVA, false)]});
       Object.assign(meta, {offre: offre});
     }
     const session = stripe('post', 'checkout/sessions', {
@@ -351,7 +384,12 @@ function creerPaiement(p) {
       cancel_url: SITE + '/' + page + '/?paiement=annule',
       line_items: lignes,
       metadata: meta,
-      payment_intent_data: {description: NOM_EVENT + ' · ' + quoi + ' · ' + ref, receipt_email: email}
+      payment_intent_data: {description: NOM_EVENT + ' · ' + quoi + ' · ' + ref},
+      // Facture Stripe (numérotée, HT / TVA / TTC) créée au paiement, envoyée ensuite par ce script
+      invoice_creation: {enabled: true, invoice_data: {description: NOM_EVENT + ' · ' + DATES + ' · Pamiers', footer: piedFacture(), metadata: {ref: ref}, custom_fields: [{name: 'Référence', value: ref}]}},
+      billing_address_collection: 'required',                        // adresse du client, obligatoire sur une facture
+      name_collection: {business: {enabled: true, optional: true}},  // nom de l'entreprise (facultatif)
+      tax_id_collection: {enabled: true}                             // n° de TVA intracommunautaire (facultatif)
     });
     marquer(ref, 'Paiement en cours', false);
     return {ok: true, url: session.url};
@@ -426,12 +464,42 @@ function paiementRecu(s) {
   } finally {
     lock.releaseLock();
   }
-  if (ref.charAt(0) === 'R') envoyerTicketSiBesoin(ref);
-  if (nouveau) { try { mailsPaiement(ref, s.amount_total / 100, !s.livemode); } catch (err) { console.error('mailsPaiement', err); } }
+  // Facture : récupérée seulement si elle n'a pas encore été envoyée (colonne Facture vide)
+  let fac = null;
+  const l = ligneRepas(ref);
+  if (l && !String(l.d.facture || '')) { try { fac = factureDe(s); } catch (err) { console.error('factureDe', err); } }
+  if (ref.charAt(0) === 'R') envoyerTicketSiBesoin(ref, fac);
+  if (nouveau) { try { mailsPaiement(ref, s.amount_total / 100, !s.livemode, fac); } catch (err) { console.error('mailsPaiement', err); } }
+  envoyerFactureSiBesoin(ref, fac);
+}
+
+/** Note la facture comme envoyée. */
+function noterFacture(l, fac) {
+  l.sh.getRange(l.ligne, l.col('facture')).setValue('N° ' + fac.numero + ' envoyée le ' + Utilities.formatDate(new Date(), 'Europe/Paris', 'dd/MM HH:mm') + (fac.url ? ' · ' + fac.url : ''));
+}
+
+/** Envoie la facture seule si elle n'est partie ni avec le ticket ni avec la confirmation (ex. facture prête plus tard). */
+function envoyerFactureSiBesoin(ref, fac) {
+  if (!fac) return false;
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(10000);
+    const l = ligneRepas(ref);
+    if (!l || !/^Payé/.test(String(l.d.paiement)) || String(l.d.facture) || !MAIL_RE.test(String(l.d.email || ''))) return false;
+    MailApp.sendEmail({to: String(l.d.email), subject: NOM_EVENT + ' · votre facture n° ' + fac.numero, name: NOM_EVENT, attachments: [fac.pdf],
+      body: 'Bonjour ' + String(l.d.nom || '').replace(/[<>]/g, '').slice(0, 60) + ',\n\nVous trouverez ci-joint votre facture n° ' + fac.numero + ' (référence ' + ref + ').\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nL\'équipe du ' + NOM_EVENT + '\n' + DATES});
+    noterFacture(l, fac);
+    return true;
+  } catch (err) {
+    console.error('envoyerFactureSiBesoin', err);
+    return false;
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 /** E-mail de confirmation au client (stand, partenaire) et e-mail à l'organisation, une fois par paiement. */
-function mailsPaiement(ref, montant, test) {
+function mailsPaiement(ref, montant, test, fac) {
   const l = ligneRepas(ref);
   if (!l) return;
   const d = l.d, quoi = TYPE_DE[ref.charAt(0)], nom = String(d.nom || '').replace(/[<>]/g, '').slice(0, 60);
@@ -442,13 +510,16 @@ function mailsPaiement(ref, montant, test) {
   MailApp.sendEmail({to: NOTIFIER || Session.getEffectiveUser().getEmail(), subject: NOM_EVENT + ' · paiement reçu' + (test ? ' (TEST)' : '') + ' · ' + montant + ' €',
     body: 'Paiement reçu' + (test ? ' en mode TEST (pas de vrai argent)' : '') + ' : ' + montant + ' € TTC\n\n' + quoiTexte + '\n' + (d.entreprise ? 'Entreprise : ' + d.entreprise + '\n' : '')
       + 'Nom : ' + nom + '\nTéléphone : ' + (d.tel || '-') + '\nE-mail : ' + (d.email || '-') + '\nRéférence : ' + ref + '\n\n' + aFaire
+      + (fac && fac.url ? '\n\nFacture n° ' + fac.numero + ' : ' + fac.url : '')
       + '\n\nTout est dans le Google Sheet : ' + SpreadsheetApp.getActiveSpreadsheet().getUrl()});
   if (quoi === 'repas' || !MAIL_RE.test(String(d.email || ''))) return;   // repas : le ticket fait office de confirmation
   const txt = quoi === 'stand'
     ? 'Nous avons bien reçu votre paiement de ' + montant + ' € TTC pour votre ' + quoiTexte + ' au ' + NOM_EVENT + '.\n\nL\'organisation vous appelle au ' + (d.tel || 'numéro indiqué') + ' pour confirmer votre emplacement. Installation le vendredi 18 décembre de 8 h à 11 h, ouverture à 14 h. La tonnelle est à décorer par vos soins, sur le thème de Noël.'
     : 'Nous avons bien reçu votre paiement de ' + montant + ' € TTC pour l\'' + quoiTexte + '. Merci de soutenir le ' + NOM_EVENT + ' !\n\nNous vous rappelons sous 48 h pour la suite : votre logo (à nous envoyer avant le 1er décembre), les photos et vidéos, et vos repas offerts.';
-  MailApp.sendEmail({to: String(d.email), subject: NOM_EVENT + ' · paiement bien reçu', name: NOM_EVENT,
-    body: 'Bonjour ' + nom + ',\n\n' + txt + '\n\nBesoin d\'une facture ? Écrivez à ' + MAIL_FACTURE + ' en indiquant votre référence : ' + ref + '.\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nÀ très vite,\nL\'équipe du ' + NOM_EVENT + '\n' + DATES});
+  const libre = fac && !String(d.facture || '');
+  MailApp.sendEmail({to: String(d.email), subject: NOM_EVENT + ' · paiement bien reçu', name: NOM_EVENT, attachments: libre ? [fac.pdf] : [],
+    body: 'Bonjour ' + nom + ',\n\n' + txt + '\n\n' + (libre ? 'Votre facture n° ' + fac.numero + ' est jointe à cet e-mail.' : 'Votre facture vous est envoyée par e-mail.') + ' Référence : ' + ref + '.\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nÀ très vite,\nL\'équipe du ' + NOM_EVENT + '\n' + DATES});
+  if (libre) noterFacture(l, fac);
 }
 
 
@@ -494,13 +565,15 @@ function ligneRepas(ref) {
 }
 
 /** Envoie le ticket une seule fois (colonne Ticket vide), uniquement si la réservation est payée. */
-function envoyerTicketSiBesoin(ref) {
+function envoyerTicketSiBesoin(ref, fac) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(10000);
     const l = ligneRepas(ref);
     if (!l || !/^Payé/.test(String(l.d.paiement)) || String(l.d.ticket)) return false;
-    envoyerTicket(l.d);
+    const avecFacture = fac && !String(l.d.facture || '');
+    envoyerTicket(l.d, avecFacture ? fac : null);
+    if (avecFacture) noterFacture(l, fac);
     l.sh.getRange(l.ligne, l.col('ticket')).setValue('Envoyé le ' + Utilities.formatDate(new Date(), 'Europe/Paris', 'dd/MM HH:mm'));
     return true;
   } catch (err) {
@@ -528,7 +601,7 @@ function qrDataUrl(texte) {
 }
 
 /** Construit le PDF du ticket et l'envoie par e-mail. */
-function envoyerTicket(d) {
+function envoyerTicket(d, fac) {
   const code = codeTicket(String(d.ref));
   const m = parseInt(d.moyennes || '0', 10), g = parseInt(d.grandes || '0', 10), off = parseInt(d.offerts || '0', 10);
   const esc = function (t) { return String(t).replace(/[&<>"']/g, function (c) { return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]; }); };
@@ -557,8 +630,8 @@ function envoyerTicket(d) {
   const pdf = Utilities.newBlob(html, 'text/html', 'ticket.html').getAs('application/pdf').setName('Ticket-repas-' + d.ref + '.pdf');
   const corps = 'Bonjour ' + String(d.nom).replace(/[<>]/g, '') + ',\n\nMerci pour votre paiement ! Vous trouverez votre ticket repas en pièce jointe (PDF).\n\n'
     + 'Le jour du marché, présentez le QR code à l\'accueil (sur votre téléphone ou imprimé) : on vous remet vos tickets, à échanger dans le stand de votre choix.\n'
-    + 'Attention : le QR code ne fonctionne qu\'une seule fois, ne le partagez pas.\n\nBesoin d\'une facture ? Écrivez à ' + MAIL_FACTURE + ' avec votre référence.\nRéférence : ' + d.ref + '\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nÀ très vite,\nL\'équipe du ' + NOM_EVENT + '\n' + DATES;
-  MailApp.sendEmail({to: String(d.email), subject: NOM_EVENT + ' · votre ticket repas', body: corps, name: NOM_EVENT, attachments: [pdf]});
+    + 'Attention : le QR code ne fonctionne qu\'une seule fois, ne le partagez pas.\n\nRéférence : ' + d.ref + '\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nÀ très vite,\nL\'équipe du ' + NOM_EVENT + '\n' + DATES;
+  MailApp.sendEmail({to: String(d.email), subject: NOM_EVENT + ' · votre ticket repas', body: corps + (fac ? '\n\nVotre facture n° ' + fac.numero + ' est également jointe.' : ''), name: NOM_EVENT, attachments: fac ? [pdf, fac.pdf] : [pdf]});
 }
 
 /** Vérifie le code accueil, avec limite d'essais. */
