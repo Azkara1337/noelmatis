@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Formulaire from './Formulaire';
 import { useToast } from './Toast';
 import { DEJA, ENDPOINT, PAIEMENT_EN_LIGNE, PRIX_STANDS, ttc } from '@/lib/config';
-import { BoutonPaiement, RetourPaiement, useReference } from './Paiement';
+import { RetourPaiement, useReference } from './Paiement';
 import { BAKED, STANDS, ZONES } from '@/lib/plan';
 
 const eur = (n: number) => n.toLocaleString('fr-FR', { maximumFractionDigits: 2 }) + ' €';
@@ -149,7 +149,6 @@ export default function PageStand() {
           recap={v => `Merci ${v.nom} ! Demande reçue${v.stand ? ' pour le stand ' + v.stand : ''} (${v.categorie}). ` + (PAIEMENT_EN_LIGNE && PRIX_STANDS[v.categorie] ? `Le paiement ne s’est pas ouvert : réglez votre stand avec le bouton ci-dessous (${eur(ttc(PRIX_STANDS[v.categorie]))} TTC). L’organisation vous appelle ensuite au ${v.tel} pour confirmer votre emplacement.` : `L’organisation vous rappelle au ${v.tel} pour confirmer votre emplacement et le tarif.`)}
           finMerci=""
           paiement={v => PAIEMENT_EN_LIGNE && v.ref && PRIX_STANDS[v.categorie] ? 'stand' : null}
-          apresMerci={(v, pb) => PAIEMENT_EN_LIGNE && v.ref && PRIX_STANDS[v.categorie] ? <BoutonPaiement v={v} quoi="stand" montant={eur(ttc(PRIX_STANDS[v.categorie]))} probleme={pb} /> : null}
           bouton={PAIEMENT_EN_LIGNE && PRIX_STANDS[cat] ? `Payer ${eur(ttc(PRIX_STANDS[cat]))} TTC et envoyer ma demande` : 'Envoyer ma demande de stand'}
           boutonClass="btn plein xcta"
         >

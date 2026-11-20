@@ -2,7 +2,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { ENDPOINT, TELEPHONE } from '@/lib/config';
 import { filtrerTel, nettoyer, verifier } from '@/lib/validation';
-import { lancerPaiement, type Lancement, type Quoi } from './Paiement';
+import { lancerPaiement, type Quoi } from './Paiement';
 
 export type Valeurs = Record<string, string>;
 
@@ -33,7 +33,7 @@ type Props = {
   /** Contenu affiché sous le message d'erreur (ex. modalités de paiement). */
   apres?: ReactNode;
   /** Contenu ajouté sous le message de remerciement (ex. bouton de paiement de secours), calculé à partir des valeurs envoyées. */
-  apresMerci?: (v: Valeurs, probleme?: Lancement) => ReactNode;
+  apresMerci?: (v: Valeurs) => ReactNode;
   /** Paiement direct : après l'envoi, ouvre tout de suite la page Stripe pour ce type (null = pas de paiement, ex. « Je ne sais pas encore »). */
   paiement?: (v: Valeurs) => Quoi | null;
   /** Remplace la phrase « Sans nouvelles de notre part sous 48 h… ». */
@@ -48,7 +48,6 @@ export default function Formulaire({ id, className, type, champs, requis, erreur
   const [merci, setMerci] = useState<string | null>(null);
   const [envoyees, setEnvoyees] = useState<Valeurs>({});
   const [ouverture, setOuverture] = useState(false);
-  const [probleme, setProbleme] = useState<Lancement | undefined>();
 
   // Téléphone : on empêche de taper autre chose que des chiffres, des espaces et un « + ».
   function saisie(e: FormEvent<HTMLFormElement>) {
@@ -68,17 +67,23 @@ export default function Formulaire({ id, className, type, champs, requis, erreur
     if (pb) { setManque(pb); return; }
     setManque(null); setEnvoi(true);
     try {
-      await envoyer({ type, page: location.href, ...v });
-      setEnvoyees(v);
-      // Paiement direct : la demande est enregistrée, on ouvre tout de suite la page de paiement Stripe.
+      // Paiement direct : on prépare d'abord la page Stripe (le code promo y est vérifié). Si tout va bien,
+      // la demande est enregistrée dans le Sheet et on part sur Stripe. Sinon on reste sur le formulaire.
       const quoi = paiement?.(v);
       if (quoi) {
         setOuverture(true);
         const r = await lancerPaiement(quoi, v, v.code_promo || '');
-        if ('url' in r) { window.location.href = r.url; return; }
+        if ('url' in r) {
+          await envoyer({ type, page: location.href, ...v });
+          window.location.href = r.url;
+          return;
+        }
         setOuverture(false);
-        setProbleme(r);
+        setManque('promo' in r ? `${r.promo} Corrigez le code ou videz le champ, puis cliquez à nouveau.` : `Le paiement n’a pas pu s’ouvrir. Réessayez dans un instant ou appelez le ${TELEPHONE}.`);
+        return;
       }
+      await envoyer({ type, page: location.href, ...v });
+      setEnvoyees(v);
       setMerci(recap(v) + ' ' + (finMerci ?? `Sans nouvelles de notre part sous 48 h, appelez le ${TELEPHONE}.`));
     } catch {
       setEchec(true);
@@ -97,7 +102,7 @@ export default function Formulaire({ id, className, type, champs, requis, erreur
         {apres}
         <p className="rgpd">Vos coordonnées servent uniquement à traiter votre demande et sont supprimées au plus tard le 31 janvier 2027. <a href="/confidentialite/">Données personnelles</a> · <a href="/cgu/">Conditions générales</a></p>
       </div>
-      <div className="merci" hidden={merci === null}><h3>{titreMerci}</h3><p className="doux recap">{merci}</p>{merci !== null && apresMerci?.(envoyees, probleme)}</div>
+      <div className="merci" hidden={merci === null}><h3>{titreMerci}</h3><p className="doux recap">{merci}</p>{merci !== null && apresMerci?.(envoyees)}</div>
     </form>
   );
 }

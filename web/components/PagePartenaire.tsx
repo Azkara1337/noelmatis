@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Faq from './Faq';
 import Formulaire from './Formulaire';
 import { CREATEURS, PAIEMENT_EN_LIGNE, PRIX_OFFRES, PRIX_REPAS, VUES_MOIS, ttc } from '@/lib/config';
-import { BoutonPaiement, RetourPaiement, useReference } from './Paiement';
+import { RetourPaiement, useReference } from './Paiement';
 import { ICONES } from './icones';
 
 const OFFRES = [{ n: 'Étoile de Noël', p: 200, r: 3 }, { n: 'Sapin Gourmand', p: 400, r: 6 }, { n: 'Maison du Père Noël', p: 1200, r: 20 }, { n: 'Partenaire Prestige', p: 2500, r: 40 }];
@@ -72,7 +72,6 @@ export default function PagePartenaire() {
             recap={v => `Merci ! Demande « ${v.offre} » reçue pour ${v.entreprise}. ` + (PAIEMENT_EN_LIGNE && PRIX_OFFRES[v.offre] ? `Le paiement ne s’est pas ouvert : réglez votre offre avec le bouton ci-dessous (${eur(ttc(PRIX_OFFRES[v.offre]))} TTC). On vous rappelle ensuite sous 48 h au ${v.tel}.` : `On vous rappelle sous 48 h au ${v.tel}.`)}
             finMerci=""
             paiement={v => PAIEMENT_EN_LIGNE && v.ref && PRIX_OFFRES[v.offre] ? 'partenaire' : null}
-            apresMerci={(v, pb) => PAIEMENT_EN_LIGNE && v.ref && PRIX_OFFRES[v.offre] ? <BoutonPaiement v={v} quoi="partenaire" montant={eur(ttc(PRIX_OFFRES[v.offre]))} probleme={pb} /> : null}
             bouton={PAIEMENT_EN_LIGNE && PRIX_OFFRES[pack] ? `Payer ${eur(ttc(PRIX_OFFRES[pack]))} TTC · ${pack}` : 'Envoyer ma demande'}
           >
             <h3>Je deviens partenaire du Marché de Noël</h3>
