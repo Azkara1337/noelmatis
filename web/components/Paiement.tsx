@@ -29,6 +29,18 @@ function parametres(quoi: Quoi, v: Valeurs, code: string): Record<string, string
 
 export type Lancement = { url: string } | { promo: string } | { erreur: true };
 
+/** Vérifie un code promo avant d'enregistrer la demande. Renvoie null si tout va bien, sinon le message à afficher. */
+export async function verifierPromo(quoi: Quoi, code: string): Promise<string | null> {
+  if (!code) return null;
+  try {
+    const r = await fetch(`${ENDPOINT}?${new URLSearchParams({ action: 'promo', quoi, code })}`);
+    const d = await r.json();
+    if (d && d.ok) return null;
+    if (d && d.promo) return `Code promo « ${code} » : ${d.erreur}.`;
+  } catch { /* réseau */ }
+  return `Le code promo n’a pas pu être vérifié. Réessayez dans un instant ou appelez le ${TELEPHONE}.`;
+}
+
 /** Demande la page de paiement Stripe au script. */
 export async function lancerPaiement(quoi: Quoi, v: Valeurs, code: string): Promise<Lancement> {
   try {

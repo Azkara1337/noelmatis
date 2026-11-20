@@ -5,11 +5,13 @@ import { ENDPOINT } from '@/lib/config';
 // Contrôle des tickets repas à l'accueil : la caméra lit le QR code du client, le script Google vérifie
 // la signature, le paiement et que les tickets n'ont pas déjà été remis. La remise se fait en un clic, une seule fois.
 
-type Etat = 'ok' | 'remis' | 'deja' | 'nonpaye' | 'inconnu' | 'faux';
+type Etat = 'ok' | 'remis' | 'deja' | 'nonpaye' | 'inconnu' | 'faux' | 'probleme';
 type Reponse = { ok: boolean; erreur?: string; etat?: Etat; ref?: string; nom?: string; moyennes?: number; grandes?: number; offerts?: number; type_offert?: string; retrait?: string };
 
-// R- : ticket repas · P- : bon repas d'un partenaire
-const CODE_RE = /^[RP]-[A-Z0-9]{8}-[0-9A-F]{12}$/;
+// Forme d'un code (R- ticket repas, P- bon partenaire…). Filtre grossier : c'est le script qui décide.
+const CODE_RE = /^[A-Z]-[A-Z0-9]{8}-[0-9A-F]{12}$/;
+const normaliser = (brut: string) => brut.trim().toUpperCase();
+const VIDES_POUR_LIBERER = 4;   // ~1 s sans voir le dernier QR avant de pouvoir le relire
 const CLE_PIN = 'accueil-code';
 
 async function appeler(action: 'controle' | 'retirer', code: string, pin: string): Promise<Reponse> {
@@ -26,8 +28,9 @@ const TITRES: Record<Etat, [string, string]> = {
   nonpaye: ['NON PAYÉ', 'La réservation existe mais le paiement n’est pas confirmé.'],
   inconnu: ['INCONNU', 'Aucune réservation avec cette référence.'],
   faux: ['QR CODE INVALIDE', 'Ce n’est pas un ticket du marché (ou il a été modifié).'],
+  probleme: ['À VÉRIFIER', 'Ce bon partenaire n’a pas de nombre de repas reconnu : ne rien remettre, appelez l’organisation.'],
 };
-const COULEUR: Record<Etat, string> = { ok: 'vert', remis: 'vert', deja: 'rouge', nonpaye: 'orange', inconnu: 'rouge', faux: 'rouge' };
+const COULEUR: Record<Etat, string> = { ok: 'vert', remis: 'vert', deja: 'rouge', nonpaye: 'orange', inconnu: 'rouge', faux: 'rouge', probleme: 'orange' };
 
 export default function ScannerAccueil() {
   const [pin, setPin] = useState('');
@@ -39,9 +42,11 @@ export default function ScannerAccueil() {
   const [camera, setCamera] = useState<'off' | 'on' | 'refus'>('off');
   const video = useRef<HTMLVideoElement>(null);
   const flux = useRef<MediaStream | null>(null);
+  // pause : la caméra ne lit rien pendant une vérification ou l'affichage d'un résultat.
   const pause = useRef(false);
-  // Dernier QR lu : on l'ignore quelques secondes après « Scanner le suivant » (il est souvent encore devant la caméra).
-  const dernier = useRef({ code: '', jusqua: 0 });
+  // Dernier code vérifié (caméra ou saisie) : ignoré tant qu'il reste devant la caméra, relu seulement après ~1 s sans lui.
+  const dernier = useRef({ code: '', vides: VIDES_POUR_LIBERER });
+  function remiseAZero() { pause.current = false; dernier.current = { code: '', vides: VIDES_POUR_LIBERER }; }
 
   // Code accueil gardé le temps de l'onglet seulement.
   useEffect(() => { try { const p = sessionStorage.getItem(CLE_PIN); if (p) { setPin(p); setConnecte(true); } } catch {} }, []);
@@ -57,17 +62,24 @@ export default function ScannerAccueil() {
     } catch { setErreur('Pas de connexion au script Google.'); } finally { setAttente(false); }
   }
 
+  /** Vérifie un code (lu par la caméra ou tapé). La caméra reste en pause jusqu'à « Scanner le suivant ». */
   async function controler(brut: string) {
-    const c = brut.trim().toUpperCase();
+    const c = normaliser(brut);
+    pause.current = true;
+    dernier.current = { code: c, vides: 0 };
     setCode(c); setErreur('');
     if (!CODE_RE.test(c)) { setRes({ ok: true, etat: 'faux' }); return; }
     setAttente(true);
+    let affiche = false;
     try {
       const r = await appeler('controle', c, pin);
       if (!r.ok) { setErreur(r.erreur || 'Erreur.'); if (/incorrect/.test(r.erreur || '')) deconnexion(); return; }
-      setRes(r);
+      setRes(r); affiche = true;
       try { navigator.vibrate?.(r.etat === 'ok' ? 80 : [200, 80, 200]); } catch {}
-    } catch { setErreur('Pas de connexion. Réessayez.'); } finally { setAttente(false); }
+    } catch { setErreur('Pas de connexion. Réessayez.'); } finally {
+      setAttente(false);
+      if (!affiche) pause.current = false;   // pas de résultat à l'écran (erreur) : la caméra reprend
+    }
   }
 
   async function remettre() {
@@ -79,14 +91,15 @@ export default function ScannerAccueil() {
     } catch { setErreur('Pas de connexion : rien n’a été noté, réessayez.'); } finally { setAttente(false); }
   }
 
-  function suivant() { dernier.current.jusqua = Date.now() + 4000; setRes(null); setCode(''); setErreur(''); pause.current = false; video.current?.play().catch(() => {}); }
-  function deconnexion() { try { sessionStorage.removeItem(CLE_PIN); } catch {} setConnecte(false); setPin(''); arreter(); }
+  function suivant() { dernier.current.vides = 0; setRes(null); setCode(''); setErreur(''); pause.current = false; video.current?.play().catch(() => {}); }
+  function deconnexion() { try { sessionStorage.removeItem(CLE_PIN); } catch {} setConnecte(false); setPin(''); setRes(null); setCode(''); remiseAZero(); arreter(); }
 
   function arreter() { flux.current?.getTracks().forEach(t => t.stop()); flux.current = null; setCamera('off'); }
 
   async function demarrer() {
     try {
       const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      remiseAZero();
       flux.current = s; setCamera('on');
     } catch { setCamera('refus'); }
   }
@@ -104,8 +117,11 @@ export default function ScannerAccueil() {
         const l = Math.min(640, v.videoWidth), h = Math.round(v.videoHeight * l / v.videoWidth);
         toile.width = l; toile.height = h; ctx.drawImage(v, 0, 0, l, h);
         const r = lire(ctx.getImageData(0, 0, l, h).data, l, h, { inversionAttempts: 'dontInvert' });
-        const lu = r?.data?.trim().toUpperCase();
-        if (lu && !(lu === dernier.current.code && Date.now() < dernier.current.jusqua)) { dernier.current.code = lu; pause.current = true; controler(lu); }
+        const lu = r?.data ? normaliser(r.data) : '';
+        const d = dernier.current;
+        if (lu !== d.code) d.vides++;   // le dernier code n'est plus devant la caméra (image vide ou autre code)
+        else d.vides = 0;
+        if (lu && (lu !== d.code || d.vides >= VIDES_POUR_LIBERER)) controler(lu);
       }
       setTimeout(tour, 250);
     };

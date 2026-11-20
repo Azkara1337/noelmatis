@@ -1,8 +1,8 @@
 'use client';
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { ENDPOINT, TELEPHONE } from '@/lib/config';
 import { filtrerTel, nettoyer, verifier } from '@/lib/validation';
-import { lancerPaiement, type Quoi } from './Paiement';
+import { lancerPaiement, verifierPromo, type Quoi } from './Paiement';
 
 export type Valeurs = Record<string, string>;
 
@@ -48,6 +48,8 @@ export default function Formulaire({ id, className, type, champs, requis, erreur
   const [merci, setMerci] = useState<string | null>(null);
   const [envoyees, setEnvoyees] = useState<Valeurs>({});
   const [ouverture, setOuverture] = useState(false);
+  // Dernière demande enregistrée dans le Sheet : un nouvel essai identique ne crée pas de doublon.
+  const dejaEnvoye = useRef('');
 
   // Téléphone : on empêche de taper autre chose que des chiffres, des espaces et un « + ».
   function saisie(e: FormEvent<HTMLFormElement>) {
@@ -67,17 +69,17 @@ export default function Formulaire({ id, className, type, champs, requis, erreur
     if (pb) { setManque(pb); return; }
     setManque(null); setEnvoi(true);
     try {
-      // Paiement direct : on prépare d'abord la page Stripe (le code promo y est vérifié). Si tout va bien,
-      // la demande est enregistrée dans le Sheet et on part sur Stripe. Sinon on reste sur le formulaire.
+      // Paiement direct : 1) code promo vérifié (sinon on reste sur le formulaire), 2) demande enregistrée dans le Sheet
+      // (le script calcule le prix à partir de cette ligne), 3) page Stripe. Aucun écran intermédiaire.
       const quoi = paiement?.(v);
       if (quoi) {
         setOuverture(true);
+        const pbPromo = await verifierPromo(quoi, v.code_promo || '');
+        if (pbPromo) { setOuverture(false); setManque(`${pbPromo} Corrigez le code ou videz le champ, puis cliquez à nouveau.`); return; }
+        const signature = JSON.stringify(v);
+        if (dejaEnvoye.current !== signature) { await envoyer({ type, page: location.href, ...v }); dejaEnvoye.current = signature; }
         const r = await lancerPaiement(quoi, v, v.code_promo || '');
-        if ('url' in r) {
-          await envoyer({ type, page: location.href, ...v });
-          window.location.href = r.url;
-          return;
-        }
+        if ('url' in r) { window.location.href = r.url; return; }
         setOuverture(false);
         setManque('promo' in r ? `${r.promo} Corrigez le code ou videz le champ, puis cliquez à nouveau.` : `Le paiement n’a pas pu s’ouvrir. Réessayez dans un instant ou appelez le ${TELEPHONE}.`);
         return;
