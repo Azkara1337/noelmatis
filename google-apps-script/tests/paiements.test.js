@@ -98,7 +98,7 @@ t('avec RESEND_KEY : ticket + facture envoyés par Resend, depuis l\'adresse du 
 t('Resend refuse : l\'e-mail part quand même par Gmail', () => {
   const c = charger(resend(422), { RESEND_KEY: 're_FAUX' }); post(c, { type: 'repas', nom: 'Jean', email: 'r@x.fr', moyennes: '1', ref: 'R-ABCD2345' });
   c.verifierSession('cs_test_A'); assert.ok(c.env.mails.some(m => /ticket repas/.test(m.subject))); });
-t('sans RESEND_KEY : Gmail, comme avant', () => { const c = charger(); post(c, stand); assert.ok(c.env.mails.length >= 1); assert.ok(!c.env.appels.some(a => /resend/.test(a.url))); });
+t('sans RESEND_KEY : Gmail, réponses vers Mathilde', () => { const c = charger(); post(c, stand); assert.ok(c.env.mails.length >= 1); assert.ok(c.env.mails.every(m => m.replyTo === 'mathilde.calero@rc-immo.com')); assert.ok(!c.env.appels.some(a => /resend/.test(a.url))); });
 
 console.log('Codes promo (onglet du Sheet)');
 const avecCodes = (c, lignes) => { const L = c.env.onglets['Codes promo'] = [['Code', 'Réduction', 'Pour', 'Jusqu\'au', 'Max', 'Actif'], ...lignes]; return L; };

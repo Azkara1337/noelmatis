@@ -716,6 +716,7 @@ function envoyerMail(m) {
   }
   const g = {to: m.to, subject: m.subject, body: m.body, name: m.name, attachments: m.attachments};
   if (m.bcc) g.bcc = m.bcc;
+  if (REPONDRE_A) g.replyTo = REPONDRE_A;   // les réponses vont à la secrétaire, même par Gmail
   if (m.html) g.htmlBody = m.html;
   MailApp.sendEmail(g);
 }
