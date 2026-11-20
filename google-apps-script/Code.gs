@@ -206,7 +206,7 @@ function doPost(e) {
   }
   // La ligne est enregistrée : un souci d'e-mail (quota Gmail…) ne doit pas faire échouer la demande.
   // Repas avec référence : l'organisation est prévenue au paiement et le ticket sert de confirmation (économise le quota Gmail).
-  if (!(d.type === 'repas' && d.ref)) {
+  if (!(d.type === 'repas' && d.ref && cleStripe())) {   // sans clé Stripe (paiement pas encore branché) : e-mails comme avant
     try { prevenir(d, o); } catch (err) { console.error('prevenir', err); }
     try { confirmer(d); } catch (err) { console.error('confirmer', err); }
   }
