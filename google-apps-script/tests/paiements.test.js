@@ -99,4 +99,30 @@ t('Resend refuse : l\'e-mail part quand même par Gmail', () => {
   const c = charger(resend(422), { RESEND_KEY: 're_FAUX' }); post(c, { type: 'repas', nom: 'Jean', email: 'r@x.fr', moyennes: '1', ref: 'R-ABCD2345' });
   c.verifierSession('cs_test_A'); assert.ok(c.env.mails.some(m => /ticket repas/.test(m.subject))); });
 t('sans RESEND_KEY : Gmail, comme avant', () => { const c = charger(); post(c, stand); assert.ok(c.env.mails.length >= 1); assert.ok(!c.env.appels.some(a => /resend/.test(a.url))); });
+
+console.log('Codes promo (onglet du Sheet)');
+const avecCodes = (c, lignes) => { const L = c.env.onglets['Codes promo'] = [['Code', 'Réduction', 'Pour', 'Jusqu\'au', 'Max', 'Actif'], ...lignes]; return L; };
+const payerAvec = (c, p) => c.creerPaiement(Object.assign({ quoi: 'stand', cat: 'Artisanat, créations', email: 'e@x.fr', ref: 'S-ABCD2345' }, p));
+const coupons = c => c.env.appels.filter(a => /\/coupons$/.test(a.url)).map(a => decode(a.o.payload));
+t('« noel10 » (10 %) : coupon Stripe créé une fois et appliqué à la session', () => {
+  const c = charger(); avecCodes(c, [['NOEL10', '10 %', 'tous', '', '', 'oui']]);
+  assert.ok(payerAvec(c, { code: 'noel10' }).ok); payerAvec(c, { code: 'NOEL10', ref: 'S-ABCD2346' });
+  assert.deepStrictEqual(coupons(c).map(x => [x.percent_off, x.duration, x.name]), [['10', 'once', 'Code NOEL10']]);
+  const p = decode(sess(c.env).o.payload); assert.ok(p['discounts[0][coupon]']); assert.strictEqual(p['metadata[code_promo]'], 'NOEL10'); });
+t('réduction en euros : 5 € → 500 centimes', () => { const c = charger(); avecCodes(c, [['MOINS5', '5 €', 'stand', '', '', 'oui']]); assert.ok(payerAvec(c, { code: 'MOINS5' }).ok); assert.deepStrictEqual(coupons(c).map(x => [x.amount_off, x.currency]), [['500', 'eur']]); });
+for (const [nom, ligne, p, err] of [
+  ['code inconnu', ['NOEL10', '10 %', 'tous', '', '', 'oui'], { code: 'AUTRE' }, 'code promo inconnu'],
+  ['code désactivé', ['NOEL10', '10 %', 'tous', '', '', 'non'], { code: 'NOEL10' }, 'code promo inconnu'],
+  ['code réservé aux repas', ['REPAS', '10 %', 'repas', '', '', 'oui'], { code: 'REPAS' }, 'ce code promo n\'est pas valable ici'],
+  ['code expiré (date du Sheet)', ['VIEUX', '10 %', 'tous', new Date('2020-01-01'), '', 'oui'], { code: 'VIEUX' }, 'ce code promo a expiré'],
+  ['code expiré (texte 01/01/2020)', ['VIEUX', '10 %', 'tous', '01/01/2020', '', 'oui'], { code: 'VIEUX' }, 'ce code promo a expiré'],
+  ['réduction mal écrite', ['BIZARRE', 'dix', 'tous', '', '', 'oui'], { code: 'BIZARRE' }, 'réduction mal écrite dans le Sheet (ex. 10 % ou 5 €)'],
+  ['code piégé', ['NOEL10', '10 %', 'tous', '', '', 'oui'], { code: '<script>' }, 'code promo invalide']])
+  t('refus : ' + nom, () => { const c = charger(); avecCodes(c, [ligne]); const r = payerAvec(c, p); assert.deepStrictEqual([r.ok, r.promo, r.erreur], [false, true, err]); assert.ok(!sess(c.env), 'pas de session Stripe'); });
+t('valable jusqu\'au 31/12/2099 : accepté', () => { const c = charger(); avecCodes(c, [['FUTUR', '10 %', 'tous', '31/12/2099', '', 'oui']]); assert.ok(payerAvec(c, { code: 'FUTUR' }).ok); });
+t('utilisations max atteintes (1 paiement « Payé » avec ce code)', () => {
+  const c = charger(); avecCodes(c, [['UNEFOIS', '10 %', 'tous', '', '1', 'oui']]);
+  post(c, Object.assign({}, stand, { code_promo: 'unefois' })); c.ligne('stand')[c.col('stand', 'paiement')] = 'Payé 129,60 €';
+  assert.strictEqual(payerAvec(c, { code: 'UNEFOIS', ref: 'S-ABCD2399' }).erreur, 'ce code promo a déjà été utilisé le nombre de fois prévu'); });
+t('sans code : aucune réduction', () => { const c = charger(); payerAvec(c, {}); assert.ok(!('discounts[0][coupon]' in decode(sess(c.env).o.payload))); });
 console.log(`\n${ok} tests réussis` + (process.exitCode ? ' — DES TESTS ÉCHOUENT' : ''));

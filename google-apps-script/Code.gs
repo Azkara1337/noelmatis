@@ -86,6 +86,7 @@ function installer() {
     lg.setColumnWidth(4, 360);
     lg.setFrozenRows(1);
   }
+  ongletCodesPromo(ss);
   const vide = ss.getSheetByName('Feuille 1') || ss.getSheetByName('Sheet1');
   if (vide && vide.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(vide);
 }
@@ -355,7 +356,14 @@ function creerPaiement(p) {
     if (!MAIL_RE.test(email)) return {ok: false, erreur: 'e-mail invalide'};
     const ref = String(p.ref || '');
     if (!REF_RE.test(ref) || ref.charAt(0) !== PREFIXE[quoi]) return {ok: false, erreur: 'référence invalide'};
-    const lignes = [], meta = {ref: ref, type: quoi};
+    // Code promo (onglet « Codes promo » du Sheet) : vérifié ici, appliqué par Stripe (visible sur la facture)
+    let remise = null;
+    const codeP = String(p.code || '').replace(/\s+/g, '').toUpperCase();
+    if (codeP) {
+      remise = codePromo(codeP, quoi);
+      if (!remise.ok) return {ok: false, promo: true, erreur: remise.erreur};
+    }
+    const lignes = [], meta = {ref: ref, type: quoi, code_promo: codeP};
     let page = quoi;
     if (quoi === 'repas') {
       const m = parseInt(p.m || '0', 10), g = parseInt(p.g || '0', 10);
@@ -381,6 +389,7 @@ function creerPaiement(p) {
       Object.assign(meta, {offre: offre});
     }
     const session = stripe('post', 'checkout/sessions', {
+      discounts: remise ? [{coupon: remise.coupon}] : undefined,
       mode: 'payment',
       payment_method_types: ['card'],   // carte (Apple Pay et Google Pay compris) : paiement confirmé tout de suite
       locale: 'fr',
@@ -529,6 +538,64 @@ function mailsPaiement(ref, montant, test, fac) {
 }
 
 
+/** Crée l'onglet « Codes promo » s'il n'existe pas (avec une ligne d'exemple désactivée). */
+function ongletCodesPromo(ss) {
+  const cp = ss.getSheetByName('Codes promo') || ss.insertSheet('Codes promo');
+  if (cp.getLastRow() === 0) {
+    cp.appendRow(['Code', 'Réduction (ex. 10 % ou 5 €)', 'Valable pour (tous, repas, stand, partenaire)', 'Jusqu\'au (date, vide = sans fin)', 'Utilisations max (vide = illimité)', 'Actif']);
+    cp.appendRow(['EXEMPLE10', '10 %', 'tous', '', '', 'non']);
+    cp.getRange(1, 1, 1, 6).setFontWeight('bold').setBackground('#2e5e2a').setFontColor('#ffffff').setWrap(true);
+    cp.getRange(2, 6, 200, 1).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(['oui', 'non'], true).build());
+    cp.setFrozenRows(1);
+  }
+}
+
+// ===================== Codes promo (onglet « Codes promo » du Sheet) =====================
+// Une ligne par code : Code · Réduction (« 10 % » ou « 5 € ») · Valable pour (tous / repas / stand / partenaire, séparés
+// par des virgules) · Jusqu'au (date) · Utilisations max · Actif (oui / non). Le script crée le coupon Stripe tout seul.
+
+/** Vérifie un code pour un type d'achat. Renvoie {ok, coupon} ou {ok: false, erreur}. */
+function codePromo(code, quoi) {
+  if (!/^[A-Z0-9_-]{1,30}$/.test(code)) return {ok: false, erreur: 'code promo invalide'};
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Codes promo');
+  if (!sh || sh.getLastRow() < 2) return {ok: false, erreur: 'code promo inconnu'};
+  const ligne = sh.getRange(2, 1, sh.getLastRow() - 1, 6).getValues().filter(function (r) { return String(r[0]).replace(/\s+/g, '').toUpperCase() === code; })[0];
+  if (!ligne || String(ligne[5]).trim().toLowerCase() !== 'oui') return {ok: false, erreur: 'code promo inconnu'};
+  const pour = String(ligne[2] || 'tous').toLowerCase();
+  if (!/tous/.test(pour) && pour.split(/[,;\s]+/).indexOf(quoi) < 0) return {ok: false, erreur: 'ce code promo n\'est pas valable ici'};
+  if (ligne[3]) {
+    const fin = ligne[3] instanceof Date ? ligne[3] : new Date(String(ligne[3]).split('/').reverse().join('-'));
+    fin.setHours(23, 59, 59);
+    if (!isNaN(fin) && new Date() > fin) return {ok: false, erreur: 'ce code promo a expiré'};
+  }
+  const max = parseInt(ligne[4], 10);
+  if (max > 0 && utilisations(code) >= max) return {ok: false, erreur: 'ce code promo a déjà été utilisé le nombre de fois prévu'};
+  const m = String(ligne[1]).replace(',', '.').match(/^\s*(\d+(?:\.\d+)?)\s*(%|€|eur)?\s*$/i);
+  if (!m || +m[1] <= 0) return {ok: false, erreur: 'réduction mal écrite dans le Sheet (ex. 10 % ou 5 €)'};
+  const pct = !m[2] || m[2] === '%';
+  if (pct && +m[1] > 100) return {ok: false, erreur: 'réduction mal écrite dans le Sheet (plus de 100 %)'};
+  const props = PropertiesService.getScriptProperties();
+  const cle = 'CPN_' + (/^(sk|rk)_live_/.test(cleStripe()) ? 'L' : 'T') + '_' + code + '_' + (pct ? 'P' : 'E') + m[1];
+  let id = props.getProperty(cle);
+  if (!id) {
+    id = stripe('post', 'coupons', pct ? {percent_off: +m[1], duration: 'once', name: 'Code ' + code} : {amount_off: Math.round(+m[1] * 100), currency: 'eur', duration: 'once', name: 'Code ' + code}).id;
+    props.setProperty(cle, id);
+  }
+  return {ok: true, coupon: id};
+}
+
+/** Nombre de paiements faits avec ce code (lignes « Payé » des onglets Repas, Stands et Partenaires). */
+function utilisations(code) {
+  let n = 0;
+  Object.keys(ONGLETS).forEach(function (k) {
+    const o = ONGLETS[k], sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(o.nom);
+    if (!sh || sh.getLastRow() < 2) return;
+    const cles = o.cols.map(function (c) { return c[0]; }), cc = cles.indexOf('code_promo'), cp = cles.indexOf('paiement');
+    sh.getRange(2, 1, sh.getLastRow() - 1, cles.length).getValues().forEach(function (r) { if (String(r[cc]).toUpperCase() === code && /^Payé/.test(String(r[cp]))) n++; });
+  });
+  return n;
+}
+
 // ===================== Envoi des e-mails (Resend, ou Gmail en secours) =====================
 
 function cleResend() { return PropertiesService.getScriptProperties().getProperty('RESEND_KEY') || ''; }
@@ -579,6 +646,7 @@ function configurerEmails() {
 // sans ouvrir Apps Script. Les secrets vont dans les propriétés du script, jamais dans ce fichier.
 
 function onOpen() {
+  try { ongletCodesPromo(SpreadsheetApp.getActiveSpreadsheet()); } catch (err) {}
   SpreadsheetApp.getUi().createMenu('Marché de Noël')
     .addItem('Configurer les paiements', 'configurer')
     .addItem('Configurer les e-mails (Resend)', 'configurerEmails')

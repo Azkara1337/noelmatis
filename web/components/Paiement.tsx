@@ -18,8 +18,8 @@ export function useReference(quoi: Quoi) {
 }
 
 /** Paramètres envoyés au script. Le montant n'en fait pas partie : le script le recalcule. */
-function parametres(quoi: Quoi, v: Valeurs): Record<string, string> {
-  const base = { action: 'paiement', quoi, email: v.email, ref: v.ref };
+function parametres(quoi: Quoi, v: Valeurs, code: string): Record<string, string> {
+  const base = { action: 'paiement', quoi, email: v.email, ref: v.ref, code };
   if (quoi === 'repas') return { ...base, m: v.moyennes || '0', g: v.grandes || '0', type: v.offert_type || '' };
   if (quoi === 'stand') return { ...base, cat: v.categorie, stand: v.stand || '' };
   return { ...base, offre: v.offre };
@@ -28,12 +28,16 @@ function parametres(quoi: Quoi, v: Valeurs): Record<string, string> {
 /** Bouton « Payer en ligne » : le script Google crée la page de paiement Stripe (prix recalculé côté serveur). */
 export function BoutonPaiement({ v, quoi = 'repas', montant }: { v: Valeurs; quoi?: Quoi; montant: string }) {
   const [etat, setEtat] = useState<'pret' | 'attente' | 'erreur'>('pret');
-  async function payer() {
-    setEtat('attente');
+  // Code promo tapé dans le formulaire : vérifié et appliqué par le script (onglet « Codes promo » du Sheet).
+  const [code, setCode] = useState(v.code_promo || '');
+  const [promo, setPromo] = useState('');
+  async function payer(c = code) {
+    setEtat('attente'); setPromo('');
     try {
-      const r = await fetch(`${ENDPOINT}?${new URLSearchParams(parametres(quoi, v))}`);
+      const r = await fetch(`${ENDPOINT}?${new URLSearchParams(parametres(quoi, v, c))}`);
       const d = await r.json();
       if (d && d.ok && typeof d.url === 'string' && d.url.startsWith('https://checkout.stripe.com/')) { window.location.href = d.url; return; }
+      if (d && d.promo) { setPromo(`Code promo « ${c} » : ${d.erreur}.`); setEtat('pret'); return; }
       setEtat('erreur');
     } catch {
       setEtat('erreur');
@@ -41,7 +45,14 @@ export function BoutonPaiement({ v, quoi = 'repas', montant }: { v: Valeurs; quo
   }
   return (
     <div className="payer-z">
-      <button type="button" className="btn plein payer" onClick={payer} disabled={etat === 'attente'}>{etat === 'attente' ? 'Ouverture du paiement…' : `Payer ${montant} en ligne`}</button>
+      {promo ? (
+        <>
+          <p className="err" role="alert">{promo}</p>
+          <button type="button" className="btn plein payer" onClick={() => { setCode(''); payer(''); }} disabled={etat === 'attente'}>{etat === 'attente' ? 'Ouverture du paiement…' : `Payer ${montant} sans le code`}</button>
+        </>
+      ) : (
+        <button type="button" className="btn plein payer" onClick={() => payer()} disabled={etat === 'attente'}>{etat === 'attente' ? 'Ouverture du paiement…' : code ? `Payer en ligne · code ${code} appliqué` : `Payer ${montant} en ligne`}</button>
+      )}
       <p className="doux payer-note">{etat === 'erreur' ? `Le paiement n’a pas pu s’ouvrir. Réessayez dans un instant ou appelez le ${TELEPHONE}.` : 'Paiement sécurisé par Stripe · carte bancaire, Apple Pay, Google Pay'}</p>
     </div>
   );
