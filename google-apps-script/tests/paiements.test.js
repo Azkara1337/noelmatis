@@ -1,8 +1,8 @@
 // Tests du paiement en ligne des stands et des offres partenaires (faux Stripe, faux Sheet à plusieurs onglets).
 const fs = require('fs'), assert = require('assert'), crypto = require('crypto');
 const src = fs.readFileSync(require('path').join(__dirname, '..', 'Code.gs'), 'utf8');
-function charger(stripeRep) {
-  const env = { onglets: {}, appels: [], mails: [], props: { STRIPE_SECRET: 'sk_test_FAUX' }, cache: {} };
+function charger(stripeRep, props = {}) {
+  const env = { onglets: {}, appels: [], mails: [], props: Object.assign({ STRIPE_SECRET: 'sk_test_FAUX' }, props), cache: {} };
   const feuille = nom => { const L = env.onglets[nom] = env.onglets[nom] || []; return {
     getLastRow: () => L.length, getLastColumn: () => (L[0] || []).length, appendRow: r => L.push(r.slice()),
     getRange: (r, c, nr, nc) => ({ getValues: () => L.slice(r - 1, r - 1 + (nr || 1)).map(l => { const x = l.slice(c - 1, c - 1 + (nc || 1)); while (x.length < (nc || 1)) x.push(''); return x; }),
@@ -10,11 +10,11 @@ function charger(stripeRep) {
       setValues: v => { v[0].forEach((x, i) => { L[r - 1][c - 1 + i] = x; }); return { setFontWeight: () => ({ setBackground: () => ({ setFontColor: () => {} }) }) }; } }) }; };
   const g = {
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => env.props[k] || null, setProperty: (k, v) => { env.props[k] = v; } }) },
-    UrlFetchApp: { fetch: (url, o) => { env.appels.push({ url, o }); const r = (stripeRep || (() => ({ code: 200, corps: { url: 'https://checkout.stripe.com/c/pay/cs_test_A', id: 'cs_test_A' } })))(url, o); return { getResponseCode: () => r.code, getContentText: () => JSON.stringify(r.corps), getBlob: () => ({ getBytes: () => [], setName(n) { this.nom = n; return this; } }) }; } },
+    UrlFetchApp: { fetch: (url, o) => { env.appels.push({ url, o }); const r = (stripeRep || (() => ({ code: 200, corps: { url: 'https://checkout.stripe.com/c/pay/cs_test_A', id: 'cs_test_A' } })))(url, o); return { getResponseCode: () => r.code, getContentText: () => JSON.stringify(r.corps), getBlob: () => ({ getBytes: () => [3], setName(n) { this.nom = n; return this; }, getName() { return this.nom; } }) }; } },
     SpreadsheetApp: { getActiveSpreadsheet: () => ({ getSheetByName: feuille, getUrl: () => 'https://sheet' }) },
     CacheService: { getScriptCache: () => ({ get: k => env.cache[k] || null, put: (k, v) => { env.cache[k] = v; } }) },
     Utilities: { formatDate: (d, z, f) => /yyyy/.test(f) ? '2026112010' : '20/11 10:00', getUuid: () => crypto.randomUUID(), base64EncodeWebSafe: s => Buffer.from(s).toString('base64'), base64Encode: b => Buffer.from(b).toString('base64'),
-      computeHmacSha256Signature: (v, k) => Array.from(crypto.createHmac('sha256', k).update(v).digest(), b => (b > 127 ? b - 256 : b)), newBlob: h => ({ getAs: () => ({ setName: n => ({ nom: n, html: h }) }) }) },
+      computeHmacSha256Signature: (v, k) => Array.from(crypto.createHmac('sha256', k).update(v).digest(), b => (b > 127 ? b - 256 : b)), newBlob: h => ({ getAs: () => ({ setName: n => ({ nom: n, html: h, getName: () => n, getBytes: () => [1, 2] }) }) }) },
     LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
     MailApp: { sendEmail: m => env.mails.push(m), getRemainingDailyQuota: () => 100 },
     ContentService: { createTextOutput: t => ({ setMimeType: () => t }), MimeType: {} },
@@ -83,4 +83,20 @@ t('facture prête plus tard : envoyée seule au passage suivant, une fois', () =
 t('réservation de repas : pas d\'e-mail avant le paiement (quota Gmail)', () => { const c = charger(); post(c, { type: 'repas', nom: 'Jean', email: 'r@x.fr', moyennes: '1', ref: 'R-ABCD2345' }); assert.strictEqual(c.env.mails.length, 0); });
 t('taux de TVA créé une seule fois (20 % hors taxes, 10 % TTC pour les repas)', () => { const c = charger(); c.creerPaiement({ quoi: 'stand', cat: 'Artisanat, créations', email: 'e@x.fr', ref: 'S-ABCD2345' }); c.creerPaiement({ quoi: 'stand', cat: 'Artisanat, créations', email: 'e@x.fr', ref: 'S-ABCD2346' }); c.creerPaiement({ quoi: 'repas', m: '1', email: 'e@x.fr', ref: 'R-ABCD2345' });
   const tx = c.env.appels.filter(a => /tax_rates$/.test(a.url)).map(a => decode(a.o.payload)); assert.deepStrictEqual(tx.map(x => [x.percentage, x.inclusive]), [['20', 'false'], ['10', 'true']]); });
+
+console.log('E-mails par Resend');
+const resend = (code) => (url, o) => /api\.resend\.com/.test(url) ? { code, corps: code < 300 ? { id: 'e1' } : { message: 'domaine non vérifié' } } : avecFacture('R-ABCD2345', 4000)(url, o);
+t('avec RESEND_KEY : ticket + facture envoyés par Resend, depuis l\'adresse du site, réponses vers Mathilde', () => {
+  const c = charger(resend(200), { RESEND_KEY: 're_FAUX' }); post(c, { type: 'repas', nom: 'Jean', email: 'r@x.fr', moyennes: '2', grandes: '1', ref: 'R-ABCD2345' });
+  c.verifierSession('cs_test_A');
+  const envois = c.env.appels.filter(a => /api\.resend\.com\/emails/.test(a.url)).map(a => ({ h: a.o.headers.Authorization, ...JSON.parse(a.o.payload) }));
+  assert.strictEqual(c.env.mails.length, 0, 'rien par Gmail');
+  const tk = envois.find(e => /ticket repas/.test(e.subject)); assert.ok(tk);
+  assert.strictEqual(tk.h, 'Bearer re_FAUX'); assert.strictEqual(tk.from, 'Marché de Noël <billetterie@noel-rcimmo.fr>'); assert.deepStrictEqual(tk.to, ['r@x.fr']); assert.strictEqual(tk.reply_to, 'mathilde.calero@rc-immo.com');
+  assert.deepStrictEqual(tk.attachments.map(a => a.filename), ['Ticket-repas-R-ABCD2345.pdf', 'Facture-RC-0001.pdf']); assert.ok(tk.attachments.every(a => typeof a.content === 'string' && a.content.length));
+  const org = envois.find(e => /paiement reçu/.test(e.subject)); assert.deepStrictEqual(org.to, ['saveyourshoot@gmail.com', 'mathilde.calero@rc-immo.com']); });
+t('Resend refuse : l\'e-mail part quand même par Gmail', () => {
+  const c = charger(resend(422), { RESEND_KEY: 're_FAUX' }); post(c, { type: 'repas', nom: 'Jean', email: 'r@x.fr', moyennes: '1', ref: 'R-ABCD2345' });
+  c.verifierSession('cs_test_A'); assert.ok(c.env.mails.some(m => /ticket repas/.test(m.subject))); });
+t('sans RESEND_KEY : Gmail, comme avant', () => { const c = charger(); post(c, stand); assert.ok(c.env.mails.length >= 1); assert.ok(!c.env.appels.some(a => /resend/.test(a.url))); });
 console.log(`\n${ok} tests réussis` + (process.exitCode ? ' — DES TESTS ÉCHOUENT' : ''));

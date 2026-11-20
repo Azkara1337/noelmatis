@@ -42,6 +42,9 @@ const SITE = 'https://www.noel-rcimmo.fr';      // adresse du site, pour le reto
 const TVA = 0.20;                 // stands et offres partenaires (prix HT + TVA)
 const TVA_REPAS = 0.10;           // repas : prix TTC, TVA comprise (taux de la restauration, à confirmer par le comptable)
 // Pied de page des factures Stripe. Le capital et le n° de TVA vont dans la propriété du script FACTURE_MENTIONS (pas dans le code).
+// E-mails : par Resend si la propriété RESEND_KEY existe (adresse du site, pas de limite Gmail), sinon par Gmail.
+const EXPEDITEUR_DEFAUT = 'billetterie@noel-rcimmo.fr';   // adresse d'envoi (domaine vérifié dans Resend) ; modifiable : propriété RESEND_FROM
+const REPONDRE_A = 'mathilde.calero@rc-immo.com';          // les réponses des clients arrivent ici
 const FACTURE_PIED = 'RC IMMO · SAS · 10 B rue Jean Rostand, 09100 Pamiers · RCS Foix 892 450 172';
 const PRIX_STANDS = {'Artisanat, créations': 120, 'Producteur, terroir': 180, 'Snacking, gourmandises': 280, 'Restauration, spécialités': 420, 'Stand Premium, brasero': 590};
 const PRIX_OFFRES = {'Étoile de Noël': 200, 'Sapin Gourmand': 400, 'Maison du Père Noël': 1200, 'Partenaire Prestige': 2500};
@@ -241,13 +244,13 @@ function prevenir(d, o) {
   const dest = NOTIFIER || Session.getEffectiveUser().getEmail();
   const titre = {stand: 'Nouvelle demande de stand', repas: 'Nouvelle réservation de repas', partenaire: 'Nouvelle demande partenaire'}[d.type];
   const corps = o.cols.map(function (c) { return c[1] + ' : ' + (d[c[0]] || '-'); }).join('\n');
-  MailApp.sendEmail({to: dest, subject: NOM_EVENT + ' · ' + titre, body: corps + '\n\nTout est dans le Google Sheet : ' + SpreadsheetApp.getActiveSpreadsheet().getUrl()});
+  envoyerMail({to: dest, subject: NOM_EVENT + ' · ' + titre, body: corps + '\n\nTout est dans le Google Sheet : ' + SpreadsheetApp.getActiveSpreadsheet().getUrl()});
 }
 
 function confirmer(d) {
   const mail = String(d.email || '').trim();
   if (!MAIL_RE.test(mail)) return;
-  if (MailApp.getRemainingDailyQuota() < 20) return;               // on garde le quota pour prévenir l'organisation
+  if (!cleResend() && MailApp.getRemainingDailyQuota() < 20) return;   // Gmail : on garde le quota pour prévenir l'organisation
   const cache = CacheService.getScriptCache(), cle = 'c_' + Utilities.base64EncodeWebSafe(mail.toLowerCase()).slice(0, 200);
   if (cache.get(cle)) return;                                      // une confirmation par adresse et par heure
   cache.put(cle, '1', 3600);
@@ -259,7 +262,7 @@ function confirmer(d) {
     repas: 'Nous avons bien reçu votre demande de ' + (d.repas || '') + ' repas (' + (d.moyennes || 0) + ' moyenne(s), ' + (d.grandes || 0) + ' grande(s), ' + (d.total_ttc || '') + ' TTC)' + (+d.offerts > 0 ? ', plus ' + d.offerts + ' repas offert(s) en portion ' + String(d.offert_type).toLowerCase() : '') + ' pour le ' + NOM_EVENT + '. Le paiement se fait en ligne, par carte bancaire, depuis le site. Dès le paiement reçu, vous recevez par e-mail votre ticket repas (PDF avec un QR code) : présentez-le à l\'accueil du marché pour récupérer vos tickets, à échanger dans le stand de votre choix.',
     partenaire: 'Nous avons bien reçu votre demande pour l\'offre « ' + (d.offre || '') + ' ». ' + (PRIX_OFFRES[d.offre] ? 'Si ce n\'est pas déjà fait, réglez votre offre en ligne depuis le site. ' : '') + 'Nous vous rappelons sous 48 h.'
   }[d.type];
-  MailApp.sendEmail({to: mail, subject: NOM_EVENT + ' · demande bien reçue', body: bonjour + txt + fin, name: NOM_EVENT});
+  envoyerMail({to: mail, subject: NOM_EVENT + ' · demande bien reçue', body: bonjour + txt + fin, name: NOM_EVENT});
 }
 
 function json(obj) {
@@ -489,7 +492,7 @@ function envoyerFactureSiBesoin(ref, fac) {
     lock.waitLock(10000);
     const l = ligneRepas(ref);
     if (!l || !/^Payé/.test(String(l.d.paiement)) || String(l.d.facture) || !MAIL_RE.test(String(l.d.email || ''))) return false;
-    MailApp.sendEmail({to: String(l.d.email), subject: NOM_EVENT + ' · votre facture n° ' + fac.numero, name: NOM_EVENT, attachments: [fac.pdf],
+    envoyerMail({to: String(l.d.email), subject: NOM_EVENT + ' · votre facture n° ' + fac.numero, name: NOM_EVENT, attachments: [fac.pdf],
       body: 'Bonjour ' + String(l.d.nom || '').replace(/[<>]/g, '').slice(0, 60) + ',\n\nVous trouverez ci-joint votre facture n° ' + fac.numero + ' (référence ' + ref + ').\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nL\'équipe du ' + NOM_EVENT + '\n' + DATES});
     noterFacture(l, fac);
     return true;
@@ -510,7 +513,7 @@ function mailsPaiement(ref, montant, test, fac) {
   const aFaire = quoi === 'stand' ? 'À faire : appeler l\'exposant pour confirmer son emplacement, puis le noter dans l\'onglet Plan.'
     : quoi === 'partenaire' ? 'À faire : rappeler le partenaire (logo avant le 1er décembre, tournage), puis l\'ajouter dans l\'onglet Logos.'
     : 'Le ticket repas est parti automatiquement.';
-  MailApp.sendEmail({to: NOTIFIER || Session.getEffectiveUser().getEmail(), subject: NOM_EVENT + ' · paiement reçu' + (test ? ' (TEST)' : '') + ' · ' + montant + ' €',
+  envoyerMail({to: NOTIFIER || Session.getEffectiveUser().getEmail(), subject: NOM_EVENT + ' · paiement reçu' + (test ? ' (TEST)' : '') + ' · ' + montant + ' €',
     body: 'Paiement reçu' + (test ? ' en mode TEST (pas de vrai argent)' : '') + ' : ' + montant + ' € TTC\n\n' + quoiTexte + '\n' + (d.entreprise ? 'Entreprise : ' + d.entreprise + '\n' : '')
       + 'Nom : ' + nom + '\nTéléphone : ' + (d.tel || '-') + '\nE-mail : ' + (d.email || '-') + '\nRéférence : ' + ref + '\n\n' + aFaire
       + (fac && fac.url ? '\n\nFacture n° ' + fac.numero + ' : ' + fac.url : '')
@@ -520,11 +523,56 @@ function mailsPaiement(ref, montant, test, fac) {
     ? 'Nous avons bien reçu votre paiement de ' + montant + ' € TTC pour votre ' + quoiTexte + ' au ' + NOM_EVENT + '.\n\nL\'organisation vous appelle au ' + (d.tel || 'numéro indiqué') + ' pour confirmer votre emplacement. Installation le vendredi 18 décembre de 8 h à 11 h, ouverture à 14 h. La tonnelle est à décorer par vos soins, sur le thème de Noël.'
     : 'Nous avons bien reçu votre paiement de ' + montant + ' € TTC pour l\'' + quoiTexte + '. Merci de soutenir le ' + NOM_EVENT + ' !\n\nNous vous rappelons sous 48 h pour la suite : votre logo (à nous envoyer avant le 1er décembre), les photos et vidéos, et vos repas offerts.';
   const libre = fac && !String(d.facture || '');
-  MailApp.sendEmail({to: String(d.email), subject: NOM_EVENT + ' · paiement bien reçu', name: NOM_EVENT, attachments: libre ? [fac.pdf] : [],
+  envoyerMail({to: String(d.email), subject: NOM_EVENT + ' · paiement bien reçu', name: NOM_EVENT, attachments: libre ? [fac.pdf] : [],
     body: 'Bonjour ' + nom + ',\n\n' + txt + '\n\n' + (libre ? 'Votre facture n° ' + fac.numero + ' est jointe à cet e-mail.' : 'Votre facture vous est envoyée par e-mail.') + ' Référence : ' + ref + '.\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nÀ très vite,\nL\'équipe du ' + NOM_EVENT + '\n' + DATES});
   if (libre) noterFacture(l, fac);
 }
 
+
+// ===================== Envoi des e-mails (Resend, ou Gmail en secours) =====================
+
+function cleResend() { return PropertiesService.getScriptProperties().getProperty('RESEND_KEY') || ''; }
+function expediteur() { return PropertiesService.getScriptProperties().getProperty('RESEND_FROM') || EXPEDITEUR_DEFAUT; }
+
+/**
+ * Envoie un e-mail : {to, subject, body, name?, attachments?: [fichiers]}.
+ * Avec Resend : depuis l'adresse du site, réponse vers REPONDRE_A. Si Resend refuse, on retombe sur Gmail.
+ */
+function envoyerMail(m) {
+  const cle = cleResend();
+  if (cle) {
+    const corps = {
+      from: (m.name || NOM_EVENT) + ' <' + expediteur() + '>',
+      to: String(m.to).split(',').map(function (x) { return x.trim(); }).filter(String),
+      subject: m.subject,
+      text: m.body,
+      reply_to: REPONDRE_A,
+      attachments: (m.attachments || []).map(function (b) { return {filename: b.getName(), content: Utilities.base64Encode(b.getBytes())}; })
+    };
+    const r = UrlFetchApp.fetch('https://api.resend.com/emails', {method: 'post', contentType: 'application/json', headers: {Authorization: 'Bearer ' + cle}, payload: JSON.stringify(corps), muteHttpExceptions: true});
+    if (r.getResponseCode() < 300) return;
+    console.error('Resend refuse l\'e-mail (' + r.getResponseCode() + ') : ' + r.getContentText() + ' — envoi par Gmail');
+  }
+  MailApp.sendEmail(m);
+}
+
+/** Menu : clé Resend et adresse d'envoi, vérifiées par un e-mail de test. */
+function configurerEmails() {
+  const ui = SpreadsheetApp.getUi(), props = PropertiesService.getScriptProperties();
+  const cle = demander(ui, '1/2 · Clé Resend', 'Colle la clé API Resend (re_…). Resend > API Keys. Tape « gmail » pour revenir aux envois par Gmail.', props.getProperty('RESEND_KEY'));
+  if (cle === null) return;
+  if (cle.toLowerCase() === 'gmail') { props.deleteProperty('RESEND_KEY'); ui.alert('Les e-mails repartent par Gmail.'); return; }
+  if (!/^re_[A-Za-z0-9_]+$/.test(cle)) { ui.alert('Ce n\'est pas une clé Resend (elle commence par re_). Rien n\'a été changé.'); return; }
+  const de = demander(ui, '2/2 · Adresse d\'envoi', 'Adresse qui envoie les e-mails. Son domaine doit être vérifié dans Resend (Domains). Actuelle : ' + expediteur(), expediteur());
+  if (de === null) return;
+  if (!MAIL_RE.test(de)) { ui.alert('Adresse invalide. Rien n\'a été changé.'); return; }
+  const moi = Session.getEffectiveUser().getEmail() || NOTIFIER.split(',')[0];
+  const r = UrlFetchApp.fetch('https://api.resend.com/emails', {method: 'post', contentType: 'application/json', headers: {Authorization: 'Bearer ' + cle}, muteHttpExceptions: true,
+    payload: JSON.stringify({from: NOM_EVENT + ' <' + de + '>', to: [moi], subject: NOM_EVENT + ' · test Resend', text: 'Cet e-mail confirme que Resend est bien branché. Les clients recevront leurs e-mails depuis ' + de + '.', reply_to: REPONDRE_A})});
+  if (r.getResponseCode() >= 300) { ui.alert('Resend refuse l\'envoi : ' + r.getContentText() + '\n\nSouvent : le domaine de ' + de + ' n\'est pas encore vérifié dans Resend. Rien n\'a été changé.'); return; }
+  props.setProperty('RESEND_KEY', cle); props.setProperty('RESEND_FROM', de);
+  ui.alert('Resend est branché ✓\nUn e-mail de test vient de partir vers ' + moi + '.\nLes clients recevront leurs e-mails depuis ' + de + ' (réponses vers ' + REPONDRE_A + ').');
+}
 
 // ===================== Menu « Marché de Noël » dans le Google Sheet =====================
 // Configurer : clé Stripe, code accueil, mentions des factures, déclencheur horaire. Tout se fait par des fenêtres,
@@ -533,6 +581,7 @@ function mailsPaiement(ref, montant, test, fac) {
 function onOpen() {
   SpreadsheetApp.getUi().createMenu('Marché de Noël')
     .addItem('Configurer les paiements', 'configurer')
+    .addItem('Configurer les e-mails (Resend)', 'configurerEmails')
     .addItem('Vérifier la configuration', 'etatConfiguration')
     .addItem('Reprendre les paiements maintenant', 'verifierPaiements')
     .addToUi();
@@ -583,7 +632,7 @@ function resumeConfiguration(compte, cle) {
     + 'Code accueil : ' + (props.getProperty('ACCUEIL_CODE') || 'aucun') + '\n'
     + 'Mentions des factures : ' + (props.getProperty('FACTURE_MENTIONS') || 'MANQUANTES (capital et n° de TVA)') + '\n'
     + 'Vérification des paiements : toutes les 15 minutes\n'
-    + 'E-mails restants aujourd\'hui : ' + MailApp.getRemainingDailyQuota();
+    + 'E-mails : ' + (cleResend() ? 'Resend, depuis ' + expediteur() : 'Gmail (' + MailApp.getRemainingDailyQuota() + ' restants aujourd\'hui). Resend : menu Marché de Noël > Configurer les e-mails');
 }
 
 function etatConfiguration() {
@@ -702,7 +751,7 @@ function envoyerTicket(d, fac) {
   const corps = 'Bonjour ' + String(d.nom).replace(/[<>]/g, '') + ',\n\nMerci pour votre paiement ! Vous trouverez votre ticket repas en pièce jointe (PDF).\n\n'
     + 'Le jour du marché, présentez le QR code à l\'accueil (sur votre téléphone ou imprimé) : on vous remet vos tickets, à échanger dans le stand de votre choix.\n'
     + 'Attention : le QR code ne fonctionne qu\'une seule fois, ne le partagez pas.\n\nRéférence : ' + d.ref + '\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nÀ très vite,\nL\'équipe du ' + NOM_EVENT + '\n' + DATES;
-  MailApp.sendEmail({to: String(d.email), subject: NOM_EVENT + ' · votre ticket repas', body: corps + (fac ? '\n\nVotre facture n° ' + fac.numero + ' est également jointe.' : ''), name: NOM_EVENT, attachments: fac ? [pdf, fac.pdf] : [pdf]});
+  envoyerMail({to: String(d.email), subject: NOM_EVENT + ' · votre ticket repas', body: corps + (fac ? '\n\nVotre facture n° ' + fac.numero + ' est également jointe.' : ''), name: NOM_EVENT, attachments: fac ? [pdf, fac.pdf] : [pdf]});
 }
 
 /** Vérifie le code accueil, avec limite d'essais. */
