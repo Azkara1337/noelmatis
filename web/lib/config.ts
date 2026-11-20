@@ -45,7 +45,7 @@ export const CONDITIONS = {
   /** Paiement des offres partenaires (ex. 'Sur facture, à 30 jours'). */
   paiementPartenaire: 'En ligne, par carte bancaire, au moment de la demande (prix affichés HT, payés TTC avec la TVA à 20 %). La facture est envoyée automatiquement par e-mail après le paiement.',
   /** Médiateur de la consommation (nom + site), obligatoire si l'organisateur est un professionnel qui vend aux particuliers. */
-  mediateur: '',
+  mediateur: `pour toute réclamation, contactez le secrétariat de l’organisation par e-mail à ${CONTACT_MAIL} ou au ${TELEPHONE}.`,
 };
 /** Date de mise à jour des pages légales. */
 export const MAJ_LEGAL = '12 novembre 2026';
