@@ -3,13 +3,13 @@ import { EVENEMENT_JSONLD, jsonLd, pageMeta } from '@/lib/seo';
 import Link from 'next/link';
 import { DefileInvites, StatsInvites } from '@/components/Invites';
 
-export const metadata: Metadata = pageMeta('/', 'Marché de Noël des Artisans & Commerçants · Pamiers, 18-20 décembre 2026', "Marché de Noël à Pamiers (Ariège) du vendredi 18 au dimanche 20 décembre 2026 : 30 stands d'artisans, producteurs et restauration, le Père Noël, jeux gonflables, salle chauffée. Réservez vos repas, votre stand ou devenez partenaire.", true);
+export const metadata: Metadata = pageMeta('/', 'Marché de Noël des Artisans & Commerçants · Pamiers, 18-20 décembre 2026', "Marché de Noël à Pamiers (Ariège) du vendredi 18 au dimanche 20 décembre 2026 : entrée gratuite, 30 stands d'artisans, producteurs et restauration, le Père Noël, jeux gonflables, salle chauffée. Réservez vos repas, votre stand ou devenez partenaire.", true);
 
 export default function Accueil() {
   return (
     <main className="page">
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(EVENEMENT_JSONLD)} />
-      <div className="plank"><div className="plank-b"><span className="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" /></svg></span><div className="pk-t"><h1>Bienvenue dans la magie de Noël !</h1><p>Vendredi 18, samedi 19 et dimanche 20 décembre 2026</p></div></div><span className="pk-lant" aria-hidden="true"></span></div><section className="pourtous"><div className="wrap">
+      <div className="plank"><div className="plank-b"><span className="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" /></svg></span><div className="pk-t"><h1>Bienvenue dans la magie de Noël !</h1><p>Vendredi 18, samedi 19 et dimanche 20 décembre 2026 · Entrée gratuite</p></div></div><span className="pk-lant" aria-hidden="true"></span></div><section className="pourtous"><div className="wrap">
         <div className="pt-card">
           <div className="pt-txt">
             <h2>Un Marché de Noël <em>pour tous</em></h2>

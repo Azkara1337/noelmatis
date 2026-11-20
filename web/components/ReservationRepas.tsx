@@ -54,6 +54,7 @@ export default function ReservationRepas() {
             {offerts > 0 && <em>Vous avez {offerts} repas offert{offerts > 1 ? 's' : ''}{manque < OFFRE_REPAS.lot ? `, encore ${manque} pour le suivant` : ''}.</em>}
           </div>
         )}
+        <p className="rep-entree"><b>Entrée du marché gratuite.</b> Les tickets servent uniquement aux repas : 1 ticket = 1 portion.</p>
         <ol className="etapes">
           <li><span>1</span><div><b>Je réserve et je paie en ligne</b><p className="doux">Par carte bancaire, paiement sécurisé, en deux minutes.</p></div></li>
           <li><span>2</span><div><b>Je reçois mon ticket par e-mail</b><p className="doux">Un PDF avec un QR code personnel, valable une seule fois. Pas de facture à attendre.</p></div></li>

@@ -39,6 +39,7 @@ export const EVENEMENT_JSONLD = {
   },
   image: [`${SITE_URL}/img/og.jpg`],
   url: `${SITE_URL}/`,
+  isAccessibleForFree: true,
   inLanguage: 'fr',
 };
 
