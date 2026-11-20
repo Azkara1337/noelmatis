@@ -39,7 +39,7 @@ export default function ProgrammeCompteur() {
       {PROGRAMME.map(j => (
         <section key={j.jour} className="prog-jour carte">
           <h3>{j.jour}</h3>
-          <ol>{j.moments.map((m, i) => <li key={i}><b>{m.heure}</b><span>{m.titre}{m.lieu && <small>{m.lieu}</small>}</span></li>)}</ol>
+          <ol>{j.moments.map((m, i) => <li key={i} className={m.heure ? '' : 'sans-h'}>{m.heure && <b>{m.heure}</b>}<span>{m.titre}{m.lieu && <small>{m.lieu}</small>}</span></li>)}</ol>
         </section>
       ))}
     </div>

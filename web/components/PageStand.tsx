@@ -3,8 +3,11 @@ import Link from 'next/link';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Formulaire from './Formulaire';
 import { useToast } from './Toast';
-import { DEJA, ENDPOINT } from '@/lib/config';
+import { DEJA, ENDPOINT, PAIEMENT_EN_LIGNE, PRIX_STANDS, ttc } from '@/lib/config';
+import { BoutonPaiement, RetourPaiement, useReference } from './Paiement';
 import { BAKED, STANDS, ZONES } from '@/lib/plan';
+
+const eur = (n: number) => n.toLocaleString('fr-FR', { maximumFractionDigits: 2 }) + ' €';
 
 type Pop = { stand: number } | { zone: string };
 
@@ -17,6 +20,7 @@ export default function PageStand() {
   const [stand, setStand] = useState('');
   const [cat, setCat] = useState('Artisanat, créations');
   const [grand, setGrand] = useState(false);
+  const ref = useReference('stand');
   const pmap = useRef<HTMLDivElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
   const ancre = useRef<HTMLElement | null>(null);
@@ -65,6 +69,7 @@ export default function PageStand() {
   return (
     <main className="page">
       <div className="plank"><div className="plank-b"><span className="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9.5L5.5 4h13L20 9.5M4 9.5h16M4 9.5a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0M5.5 12v8h13v-8M10 20v-4.5h4V20" /></svg></span><div className="pk-t"><h1>Réserver mon stand</h1><p>Exposez vos produits, créations ou spécialités au cœur du Marché de Noël !</p></div></div><span className="pk-lant" aria-hidden="true"></span></div><section id="exposants" style={{paddingTop:'0'}}><div className="wrap">
+        <RetourPaiement quoi="stand" />
         <div className="xplan">
           <figure className="xmap"><div className="pmap" id="pmap" ref={pmap}><img className="mapimg" id="carteimg" src="/img/plan.jpg" alt="Plan du marché : 30 emplacements, salle chauffée, Père Noël, grand sapin" />
             {ZONES.map(z => <button key={z.id} type="button" className="pz" data-z={z.id} style={z.pos} aria-label={z.titre} onClick={e => { e.stopPropagation(); ouvrirPop(e.currentTarget, { zone: z.id }); }}></button>)}
@@ -85,7 +90,7 @@ export default function PageStand() {
             <div className="xbox"><h3 className="xrib">Emplacements disponibles</h3>
               <ul className="xdispo">
                 <li className="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M8 12.3l2.7 2.7L16 9.6" /></svg><span><b><span id="nlib">{libres.length}</span> emplacements à pourvoir</b></span></li>
-                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="8" rx="1.5" /><path d="M7 8v3M11 8v4M15 8v3M19 8v4" /></svg><span><b>Dimensions :</b> 3 × 3 m, tonnelle à décorer par vos soins</span></li>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="8" rx="1.5" /><path d="M7 8v3M11 8v4M15 8v3M19 8v4" /></svg><span><b>Dimensions :</b> 3 × 3 m, tonnelle à décorer par vos soins, sur le thème de Noël</span></li>
                 <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 3v5M15 3v5M6.5 8h11v3a5.5 5.5 0 0 1-11 0zM12 16.5V21" /></svg><span><b>Électricité</b> sur demande</span></li>
                 <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M15.5 8.6A4.2 4.2 0 0 0 9 12a4.2 4.2 0 0 0 6.5 3.4M7.5 10.6h5M7.5 13.4h5" /></svg><span><b>Tarif :</b> à partir de 120 € HT pour les 3 jours</span></li>
               </ul>
@@ -99,31 +104,31 @@ export default function PageStand() {
         <div className="xcards">
             <article className="xc">
               <div className="xc-img"><img src="/img/x_art.jpg" alt="" loading="lazy" /><span className="xc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="8.5" width="17" height="4" rx="1" /><path d="M5 12.5V20h14v-7.5M12 8.5V20M12 8.5c-1.5-3-5-3.5-5-1.2C7 8.5 9.5 8.5 12 8.5zm0 0c1.5-3 5-3.5 5-1.2 0 1.2-2.5 1.2-5 1.2z" /></svg></span></div>
-              <div className="xc-b"><h3>Artisan & Créateur</h3><p>Créations artisanales, bijoux, déco, cadeaux, fait main…</p><p className="xc-surprise">🎁 Le plus beau stand de Noël aura une surprise !</p><div className="xc-prix"><b>120 €</b><small>HT</small><span>les 3 jours</span></div>
+              <div className="xc-b"><h3>Artisan & Créateur</h3><p>Créations artisanales, bijoux, déco, cadeaux, fait main…</p><p className="xc-surprise">🎁 Le plus beau stand de Noël aura une surprise, remise le samedi 19 décembre !</p><div className="xc-prix"><b>120 €</b><small>HT</small><span>les 3 jours</span><em>soit 144 € TTC</em></div>
               <ul><li>Emplacement 3 × 3 m</li><li>Accès au site sécurisé</li><li>Visibilité sur nos réseaux</li></ul>
               <a className="btn" href="#fexpo" onClick={() => setCat("Artisanat, créations")}>Réserver</a></div>
             </article>
             <article className="xc">
               <div className="xc-img"><img src="/img/x_prod.jpg" alt="" loading="lazy" /><span className="xc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3.5 10h17l-1.6 9.2a1 1 0 0 1-1 .8H6.1a1 1 0 0 1-1-.8zM8 10l3-6M16 10l-3-6M9 13.5v3.5M12 13.5v3.5M15 13.5v3.5" /></svg></span></div>
-              <div className="xc-b"><h3>Producteur & Terroir</h3><p>Produits locaux, fromages, charcuterie, miel, confitures…</p><div className="xc-prix"><b>180 €</b><small>HT</small><span>les 3 jours</span></div>
+              <div className="xc-b"><h3>Producteur & Terroir</h3><p>Produits locaux, fromages, charcuterie, miel, confitures…</p><div className="xc-prix"><b>180 €</b><small>HT</small><span>les 3 jours</span><em>soit 216 € TTC</em></div>
               <ul><li>Emplacement 3 × 3 m</li><li>Accès au site sécurisé</li><li>Visibilité renforcée (photos et stories)</li></ul>
               <a className="btn" href="#fexpo" onClick={() => setCat("Producteur, terroir")}>Réserver</a></div>
             </article>
             <article className="xc">
               <div className="xc-img"><img src="/img/x_snack.jpg" alt="" loading="lazy" /><span className="xc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4.5 10h12v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4zM16.5 11.5h1.5a2 2 0 0 1 0 4h-1.7M8 3.5c-.8 1 .8 2 0 3M11.5 3.5c-.8 1 .8 2 0 3" /></svg></span></div>
-              <div className="xc-b"><h3>Snacking & Gourmandises</h3><p>Crêpes, gaufres, churros, boissons chaudes, confiseries…</p><div className="xc-prix"><b>280 €</b><small>HT</small><span>les 3 jours</span></div>
+              <div className="xc-b"><h3>Snacking & Gourmandises</h3><p>Crêpes, gaufres, churros, boissons chaudes, confiseries…</p><div className="xc-prix"><b>280 €</b><small>HT</small><span>les 3 jours</span><em>soit 336 € TTC</em></div>
               <ul><li>Emplacement 3 × 3 m</li><li>Accès électrique</li><li>Visibilité renforcée sur nos réseaux</li></ul>
               <a className="btn" href="#fexpo" onClick={() => setCat("Snacking, gourmandises")}>Réserver</a></div>
             </article>
             <article className="xc">
               <div className="xc-img"><img src="/img/x_resto.jpg" alt="" loading="lazy" /><span className="xc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 3v7a2 2 0 0 0 2 2v9M11 3v7a2 2 0 0 1-2 2M9 3v6M16.5 21V3c-2 1.5-3 4-3 7v3h3" /></svg></span></div>
-              <div className="xc-b"><h3>Restauration & Spécialités</h3><p>Aligot, raclette, grillades, cochon de lait, plats régionaux…</p><div className="xc-prix"><b>420 €</b><small>HT</small><span>les 3 jours</span></div>
+              <div className="xc-b"><h3>Restauration & Spécialités</h3><p>Aligot, raclette, grillades, cochon de lait, plats régionaux…</p><div className="xc-prix"><b>420 €</b><small>HT</small><span>les 3 jours</span><em>soit 504 € TTC</em></div>
               <ul><li>Emplacement 3 × 3 m</li><li>Accès électrique renforcé</li><li>Mis en avant dans le programme</li><li>Visibilité sur nos réseaux</li></ul>
               <a className="btn" href="#fexpo" onClick={() => setCat("Restauration, spécialités")}>Réserver</a></div>
             </article>
             <article className="xc">
               <div className="xc-img"><img src="/img/x_prem.jpg" alt="" loading="lazy" /><span className="xc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 21c-3.6 0-6-2.4-6-5.6 0-3.4 2.6-5 3.6-8.4 1.9 1.3 2.6 3 2.6 4.6 1-.6 1.6-1.6 1.8-2.8 1.9 1.6 4 3.8 4 6.6 0 3.2-2.4 5.6-6 5.6z" /></svg></span></div>
-              <div className="xc-b"><h3>Stand Premium & Brasero</h3><p>Concept gourmand, bar, grande restauration, animations…</p><div className="xc-prix"><b>590 €</b><small>HT</small><span>les 3 jours</span></div>
+              <div className="xc-b"><h3>Stand Premium & Brasero</h3><p>Concept gourmand, bar, grande restauration, animations…</p><div className="xc-prix"><b>590 €</b><small>HT</small><span>les 3 jours</span><em>soit 708 € TTC</em></div>
               <ul><li>Emplacement 3 × 3 m</li><li>Accès électrique renforcé</li><li>Intégration dans un Reel dédié, avec les invités</li><li>Mise en avant prioritaire</li></ul>
               <a className="btn" href="#fexpo" onClick={() => setCat("Stand Premium, brasero")}>Réserver</a></div>
             </article>
@@ -137,11 +142,13 @@ export default function PageStand() {
 
         <Formulaire
           id="fexpo" className="xform" type="stand"
-          champs={['nom', 'activite', 'tel', 'email', 'stand', 'categorie', 'code_promo', 'message']}
-          requis={['nom', 'tel']}
-          erreur="Indiquez votre nom et votre téléphone."
+          champs={['nom', 'activite', 'tel', 'email', 'stand', 'categorie', 'code_promo', 'message', 'ref']}
+          requis={PAIEMENT_EN_LIGNE ? ['nom', 'tel', 'email'] : ['nom', 'tel']}
+          erreur={PAIEMENT_EN_LIGNE ? 'Indiquez votre nom, votre téléphone et votre e-mail.' : 'Indiquez votre nom et votre téléphone.'}
           titreMerci="C'est noté"
-          recap={v => `Merci ${v.nom} ! Demande reçue${v.stand ? ' pour le stand ' + v.stand : ''} (${v.categorie}). L’organisation vous rappelle au ${v.tel} pour confirmer votre emplacement, puis vous envoie la facture.`}
+          recap={v => `Merci ${v.nom} ! Demande reçue${v.stand ? ' pour le stand ' + v.stand : ''} (${v.categorie}). ` + (PAIEMENT_EN_LIGNE && PRIX_STANDS[v.categorie] ? `Dernière étape : réglez votre stand en ligne, ${eur(ttc(PRIX_STANDS[v.categorie]))} TTC. L’organisation vous appelle ensuite au ${v.tel} pour confirmer votre emplacement.` : `L’organisation vous rappelle au ${v.tel} pour confirmer votre emplacement et le tarif.`)}
+          finMerci=""
+          apresMerci={v => PAIEMENT_EN_LIGNE && v.ref && PRIX_STANDS[v.categorie] ? <BoutonPaiement v={v} quoi="stand" montant={eur(ttc(PRIX_STANDS[v.categorie]))} /> : null}
           bouton="Envoyer ma demande de stand"
           boutonClass="btn plein xcta"
         >
@@ -150,8 +157,9 @@ export default function PageStand() {
           <div className="deux"><label>Nom et prénom<input id="ex-nom" name="nom" autoComplete="name" /></label><label>Nom de votre activité<input id="ex-ent" name="activite" autoComplete="organization" /></label></div>
           <div className="deux"><label>Téléphone<input id="ex-tel" name="tel" type="tel" inputMode="tel" autoComplete="tel" maxLength={20} placeholder="06 12 34 56 78" /></label><label>E-mail<input id="ex-mail" name="email" type="email" autoComplete="email" /></label></div>
           <label>Stand souhaité<select id="ex-stand" name="stand" value={standOk} onChange={e => setStand(e.target.value)}><option value="">Pas de préférence</option>{libres.map(n => <option key={n} value={String(n)}>Stand {n}</option>)}</select></label>
-          <label>Catégorie<select id="ex-cat" name="categorie" value={cat} onChange={e => setCat(e.target.value)}><option value="Artisanat, créations">Artisanat, créations · 120 € HT</option><option value="Producteur, terroir">Producteur, terroir · 180 € HT</option><option value="Snacking, gourmandises">Snacking, gourmandises · 280 € HT</option><option value="Restauration, spécialités">Restauration, spécialités · 420 € HT</option><option value="Stand Premium, brasero">Stand Premium, brasero · 590 € HT</option><option>Je ne sais pas encore</option></select></label>
+          <label>Catégorie<select id="ex-cat" name="categorie" value={cat} onChange={e => setCat(e.target.value)}><option value="Artisanat, créations">Artisanat, créations · 120 € HT (144 € TTC)</option><option value="Producteur, terroir">Producteur, terroir · 180 € HT (216 € TTC)</option><option value="Snacking, gourmandises">Snacking, gourmandises · 280 € HT (336 € TTC)</option><option value="Restauration, spécialités">Restauration, spécialités · 420 € HT (504 € TTC)</option><option value="Stand Premium, brasero">Stand Premium, brasero · 590 € HT (708 € TTC)</option><option>Je ne sais pas encore</option></select></label>
           <label><span>Code promo <small className="facultatif">(facultatif)</small></span><input name="code_promo" autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={30} placeholder="Ex. NOEL2026" /></label>
+          <input type="hidden" name="ref" value={ref} />
           <label>En une phrase<textarea id="ex-msg" name="message" placeholder="Bougies, couronnes, confitures…"></textarea></label>
         </Formulaire>
         <div className="lb" id="lb" hidden={!grand} onClick={() => setGrand(false)}><img id="lbi" src="/img/plan.jpg" alt="Plan du marché en grand" /></div>

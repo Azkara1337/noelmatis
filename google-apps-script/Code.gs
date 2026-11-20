@@ -27,20 +27,25 @@
  */
 
 // ===== à remplir =====
-const NOTIFIER = 'saveyourshoot@gmail.com';   // adresses qui reçoivent chaque demande, séparées par une virgule.
+const NOTIFIER = 'saveyourshoot@gmail.com,mathilde.calero@rc-immo.com';   // adresses qui reçoivent chaque demande et chaque paiement, séparées par une virgule.
+const MAIL_FACTURE = 'mathilde.calero@rc-immo.com';   // adresse à qui les clients demandent leur facture
 const NOM_EVENT = 'Marché de Noël';
 const DATES = 'vendredi 18, samedi 19 et dimanche 20 décembre 2026';
 const TELEPHONE = '05 34 03 24 40';
 const STANDS_DEJA = {7: 'Crêpes', 11: 'Churros', 24: 'Aligot', 25: 'Brasero', 26: 'Vin chaud', 27: 'Raclette'};
 const PRIX_MOYENNE = 10, PRIX_GRANDE = 20;           // repas, en € TTC (mêmes valeurs que web/lib/config.ts)
 const OFFRE_LOT = 5, OFFRE_FIN = '2026-12-10T23:59:59+01:00';
-const SITE = 'https://www.noel-rcimmo.fr';      // adresse du site, pour le retour après paiement Stripe   // 5 repas achetés = 1 offert, jusqu'au 10 décembre inclus
+const SITE = 'https://www.noel-rcimmo.fr';      // adresse du site, pour le retour après paiement Stripe
+// Stands et offres partenaires : prix HT (mêmes valeurs que web/lib/config.ts). Le client paie le TTC (TVA ci-dessous).
+const TVA = 0.20;
+const PRIX_STANDS = {'Artisanat, créations': 120, 'Producteur, terroir': 180, 'Snacking, gourmandises': 280, 'Restauration, spécialités': 420, 'Stand Premium, brasero': 590};
+const PRIX_OFFRES = {'Étoile de Noël': 200, 'Sapin Gourmand': 400, 'Maison du Père Noël': 1200, 'Partenaire Prestige': 2500};
 // =====================
 
 const ONGLETS = {
-  stand: {nom: 'Stands', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['nom', 'Nom'], ['activite', 'Activité'], ['tel', 'Téléphone'], ['email', 'E-mail'], ['stand', 'Stand souhaité'], ['categorie', 'Catégorie'], ['message', 'Message'], ['code_promo', 'Code promo']]},
+  stand: {nom: 'Stands', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['nom', 'Nom'], ['activite', 'Activité'], ['tel', 'Téléphone'], ['email', 'E-mail'], ['stand', 'Stand souhaité'], ['categorie', 'Catégorie'], ['message', 'Message'], ['code_promo', 'Code promo'], ['ref', 'Référence'], ['paiement', 'Paiement']]},
   repas: {nom: 'Repas', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['nom', 'Nom'], ['email', 'E-mail'], ['tel', 'Téléphone'], ['profil', 'Profil'], ['repas', 'Nb repas'], ['total_ttc', 'Total TTC'], ['code_promo', 'Code promo'], ['moyennes', 'Moyennes'], ['grandes', 'Grandes'], ['offerts', 'Offerts'], ['offert_type', 'Type offert'], ['ref', 'Référence'], ['paiement', 'Paiement'], ['ticket', 'Ticket'], ['retrait', 'Retrait accueil']]},
-  partenaire: {nom: 'Partenaires', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['entreprise', 'Entreprise'], ['nom', 'Contact'], ['tel', 'Téléphone'], ['email', 'E-mail'], ['salaries', 'Salariés'], ['offre', 'Offre'], ['message', 'Message'], ['code_promo', 'Code promo']]}
+  partenaire: {nom: 'Partenaires', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['entreprise', 'Entreprise'], ['nom', 'Contact'], ['tel', 'Téléphone'], ['email', 'E-mail'], ['salaries', 'Salariés'], ['offre', 'Offre'], ['message', 'Message'], ['code_promo', 'Code promo'], ['ref', 'Référence'], ['paiement', 'Paiement']]}
 };
 
 function installer() {
@@ -143,7 +148,8 @@ const REQUIS = {stand: ['nom', 'tel'], repas: ['nom', 'email'], partenaire: ['en
 const MAX_PAR_HEURE = 30;          // au-delà, les demandes sont refusées pendant l'heure (anti-spam)
 const MAIL_RE = /^[^\s@<>"'`]+@[^\s@<>"'`]+\.[a-z]{2,}$/i;
 const TEL_RE = /^(?:0[1-9]\d{8}|\+[1-9]\d{7,14})$/;
-const REF_RE = /^R-[A-Z0-9]{8}$/;                 // référence d'une réservation de repas (créée par le site)
+const REF_RE = /^[RSP]-[A-Z0-9]{8}$/;             // référence créée par le site : R- repas, S- stand, P- partenaire
+const PREFIXE = {repas: 'R', stand: 'S', partenaire: 'P'}, TYPE_DE = {R: 'repas', S: 'stand', P: 'partenaire'};
 const NOM_RE = /^[\p{L}\p{M}0-9 '’.,&()\/+-]+$/u;
 
 function doPost(e) {
@@ -177,9 +183,10 @@ function doPost(e) {
       d.total_ttc = (m * PRIX_MOYENNE + g * PRIX_GRANDE) + ' €';
       d.offerts = String(offerts);
       d.offert_type = offerts > 0 ? (d.offert_type === 'Grande' ? 'Grande' : 'Moyenne') : '';
-      d.ref = REF_RE.test(String(d.ref || '')) ? String(d.ref) : '';
-      d.paiement = d.ref ? 'Non payé' : '';
     }
+    // Référence de paiement : elle doit correspondre au type de demande (R- repas, S- stand, P- partenaire).
+    d.ref = REF_RE.test(String(d.ref || '')) && String(d.ref).charAt(0) === PREFIXE[d.type] ? String(d.ref) : '';
+    d.paiement = d.ref ? 'Non payé' : '';
     if (!quota()) return json({ok: false, erreur: 'trop de demandes'});
     d.date = Utilities.formatDate(new Date(), 'Europe/Paris', 'dd/MM/yyyy HH:mm');
     d.statut = 'À traiter';
@@ -240,9 +247,9 @@ function confirmer(d) {
   const bonjour = 'Bonjour ' + nom + ',\n\n';
   const fin = '\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nÀ très vite,\nL\'équipe du ' + NOM_EVENT + '\n' + DATES;
   const txt = {
-    stand: 'Nous avons bien reçu votre demande de stand' + (d.stand ? ' (stand ' + d.stand + ')' : '') + ' pour le ' + NOM_EVENT + '. Nous vous rappelons pour confirmer votre emplacement, puis nous vous envoyons la facture par e-mail. Votre stand est réservé seulement à réception du paiement.',
+    stand: 'Nous avons bien reçu votre demande de stand' + (d.stand ? ' (stand ' + d.stand + ' souhaité)' : '') + ' pour le ' + NOM_EVENT + '. ' + (PRIX_STANDS[d.categorie] ? 'Si ce n\'est pas déjà fait, réglez votre stand en ligne depuis le site. ' : '') + 'L\'organisation vous appelle pour confirmer votre emplacement.',
     repas: 'Nous avons bien reçu votre demande de ' + (d.repas || '') + ' repas (' + (d.moyennes || 0) + ' moyenne(s), ' + (d.grandes || 0) + ' grande(s), ' + (d.total_ttc || '') + ' TTC)' + (+d.offerts > 0 ? ', plus ' + d.offerts + ' repas offert(s) en portion ' + String(d.offert_type).toLowerCase() : '') + ' pour le ' + NOM_EVENT + '. Le paiement se fait en ligne, par carte bancaire, depuis le site. Dès le paiement reçu, vous recevez par e-mail votre ticket repas (PDF avec un QR code) : présentez-le à l\'accueil du marché pour récupérer vos tickets, à échanger dans le stand de votre choix.',
-    partenaire: 'Nous avons bien reçu votre demande pour l\'offre « ' + (d.offre || '') + ' ». Nous vous rappelons sous 48 h.'
+    partenaire: 'Nous avons bien reçu votre demande pour l\'offre « ' + (d.offre || '') + ' ». ' + (PRIX_OFFRES[d.offre] ? 'Si ce n\'est pas déjà fait, réglez votre offre en ligne depuis le site. ' : '') + 'Nous vous rappelons sous 48 h.'
   }[d.type];
   MailApp.sendEmail({to: mail, subject: NOM_EVENT + ' · demande bien reçue', body: bonjour + txt + fin, name: NOM_EVENT});
 }
@@ -292,33 +299,59 @@ function calculRepas(m, g) {
   return {offerts: offerts, total: m * PRIX_MOYENNE + g * PRIX_GRANDE};
 }
 
-/** GET ?action=paiement&m=2&g=1&email=…&ref=R-XXXXXXXX&type=Moyenne -> {ok, url} (page de paiement Stripe). */
+/** Montant TTC en centimes à partir d'un prix HT. */
+function centimesTTC(ht) { return Math.round(ht * (1 + TVA) * 100); }
+
+/**
+ * GET ?action=paiement&quoi=repas&m=2&g=1&type=Moyenne&email=…&ref=R-XXXXXXXX
+ *     ?action=paiement&quoi=stand&cat=Producteur, terroir&stand=12&email=…&ref=S-XXXXXXXX
+ *     ?action=paiement&quoi=partenaire&offre=Sapin Gourmand&email=…&ref=P-XXXXXXXX
+ * -> {ok, url} : page de paiement Stripe. Le prix est toujours calculé ici.
+ */
 function creerPaiement(p) {
   try {
     if (!quota()) return {ok: false, erreur: 'trop de demandes'};
-    const m = parseInt(p.m || '0', 10), g = parseInt(p.g || '0', 10);
-    if (!(m >= 0 && m <= 99 && g >= 0 && g <= 99 && m + g > 0)) return {ok: false, erreur: 'nombre de repas invalide'};
+    const quoi = p.quoi || 'repas';
+    if (!PREFIXE[quoi]) return {ok: false, erreur: 'type inconnu'};
     const email = String(p.email || '').trim();
     if (!MAIL_RE.test(email)) return {ok: false, erreur: 'e-mail invalide'};
     const ref = String(p.ref || '');
-    if (!REF_RE.test(ref)) return {ok: false, erreur: 'référence invalide'};
-    const c = calculRepas(m, g);
-    const typeOffert = c.offerts > 0 ? (p.type === 'Grande' ? 'grande' : 'moyenne') : '';
-    const lignes = [];
-    if (m) lignes.push({price_data: {currency: 'eur', unit_amount: PRIX_MOYENNE * 100, product_data: {name: 'Repas · moyenne portion'}}, quantity: m});
-    if (g) lignes.push({price_data: {currency: 'eur', unit_amount: PRIX_GRANDE * 100, product_data: {name: 'Repas · grande portion'}}, quantity: g});
-    if (c.offerts > 0) lignes[0].price_data.product_data.description = '+ ' + c.offerts + ' repas offert' + (c.offerts > 1 ? 's' : '') + ' (' + typeOffert + ' portion), remis à l\'accueil';
+    if (!REF_RE.test(ref) || ref.charAt(0) !== PREFIXE[quoi]) return {ok: false, erreur: 'référence invalide'};
+    const lignes = [], meta = {ref: ref, type: quoi};
+    let page = quoi;
+    if (quoi === 'repas') {
+      const m = parseInt(p.m || '0', 10), g = parseInt(p.g || '0', 10);
+      if (!(m >= 0 && m <= 99 && g >= 0 && g <= 99 && m + g > 0)) return {ok: false, erreur: 'nombre de repas invalide'};
+      const c = calculRepas(m, g);
+      const typeOffert = c.offerts > 0 ? (p.type === 'Grande' ? 'grande' : 'moyenne') : '';
+      if (m) lignes.push({price_data: {currency: 'eur', unit_amount: PRIX_MOYENNE * 100, product_data: {name: 'Repas · moyenne portion'}}, quantity: m});
+      if (g) lignes.push({price_data: {currency: 'eur', unit_amount: PRIX_GRANDE * 100, product_data: {name: 'Repas · grande portion'}}, quantity: g});
+      if (c.offerts > 0) lignes[0].price_data.product_data.description = '+ ' + c.offerts + ' repas offert' + (c.offerts > 1 ? 's' : '') + ' (' + typeOffert + ' portion), remis à l\'accueil';
+      Object.assign(meta, {moyennes: m, grandes: g, offerts: c.offerts, type_offert: typeOffert});
+    } else if (quoi === 'stand') {
+      const cat = String(p.cat || '');
+      if (!Object.prototype.hasOwnProperty.call(PRIX_STANDS, cat)) return {ok: false, erreur: 'catégorie de stand invalide'};
+      const n = String(p.stand || '');
+      if (n && !/^([1-9]|[12]\d|30)$/.test(n)) return {ok: false, erreur: 'numéro de stand invalide'};
+      lignes.push({price_data: {currency: 'eur', unit_amount: centimesTTC(PRIX_STANDS[cat]), product_data: {name: 'Stand 3 × 3 m · ' + cat + ' · 18, 19 et 20 décembre', description: (n ? 'Stand n° ' + n + ' souhaité. ' : '') + 'Emplacement confirmé par téléphone par l\'organisation. ' + PRIX_STANDS[cat] + ' € HT + TVA 20 %.'}}, quantity: 1});
+      Object.assign(meta, {categorie: cat, stand: n});
+    } else {
+      const offre = String(p.offre || '');
+      if (!Object.prototype.hasOwnProperty.call(PRIX_OFFRES, offre)) return {ok: false, erreur: 'offre invalide'};
+      lignes.push({price_data: {currency: 'eur', unit_amount: centimesTTC(PRIX_OFFRES[offre]), product_data: {name: 'Offre partenaire « ' + offre + ' » · ' + NOM_EVENT + ' 2026', description: PRIX_OFFRES[offre] + ' € HT + TVA 20 %.'}}, quantity: 1});
+      Object.assign(meta, {offre: offre});
+    }
     const session = stripe('post', 'checkout/sessions', {
       mode: 'payment',
       payment_method_types: ['card'],   // carte (Apple Pay et Google Pay compris) : paiement confirmé tout de suite
       locale: 'fr',
       customer_email: email,
       client_reference_id: ref,
-      success_url: SITE + '/repas/?paiement=ok&session={CHECKOUT_SESSION_ID}',
-      cancel_url: SITE + '/repas/?paiement=annule',
+      success_url: SITE + '/' + page + '/?paiement=ok&session={CHECKOUT_SESSION_ID}',
+      cancel_url: SITE + '/' + page + '/?paiement=annule',
       line_items: lignes,
-      metadata: {ref: ref, moyennes: m, grandes: g, offerts: c.offerts, type_offert: typeOffert},
-      payment_intent_data: {description: NOM_EVENT + ' · repas · ' + ref}
+      metadata: meta,
+      payment_intent_data: {description: NOM_EVENT + ' · ' + quoi + ' · ' + ref, receipt_email: email}
     });
     marquer(ref, 'Paiement en cours', false);
     return {ok: true, url: session.url};
@@ -334,8 +367,7 @@ function verifierSession(id) {
     if (!/^cs_(test|live)_[A-Za-z0-9]+$/.test(id)) return {ok: false, erreur: 'session invalide'};
     const s = stripe('get', 'checkout/sessions/' + encodeURIComponent(id));
     const paye = s.payment_status === 'paid';
-    if (paye) marquer(s.client_reference_id, 'Payé ' + (s.amount_total / 100) + ' € le ' + Utilities.formatDate(new Date(s.created * 1000), 'Europe/Paris', 'dd/MM HH:mm') + (/^cs_test_/.test(id) ? ' (TEST)' : ''), true);
-    if (paye) envoyerTicketSiBesoin(s.client_reference_id);
+    if (paye) paiementRecu(s);
     return {ok: true, paye: paye, total: s.amount_total / 100, ref: s.client_reference_id};
   } catch (err) {
     console.error('verifierSession', err);
@@ -346,7 +378,7 @@ function verifierSession(id) {
 /** Écrit l'état du paiement sur la ligne de la réservation (colonne Paiement). Ne remplace jamais un « Payé ». */
 function marquer(ref, texte, force) {
   if (!REF_RE.test(String(ref || ''))) return;
-  const o = ONGLETS.repas, sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(o.nom);
+  const o = ONGLETS[TYPE_DE[ref.charAt(0)]], sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(o.nom);
   if (!sh || sh.getLastRow() < 2) return;
   entetes(sh, o);
   const cRef = o.cols.map(function (c) { return c[0]; }).indexOf('ref') + 1;
@@ -355,9 +387,9 @@ function marquer(ref, texte, force) {
   for (let i = refs.length - 1; i >= 0; i--) {
     if (String(refs[i][0]) !== ref) continue;
     const cell = sh.getRange(i + 2, cPay), avant = String(cell.getValue());
-    if (!force && /^Payé/.test(avant)) return;
+    if (!force && /^Payé/.test(avant)) return avant;
     cell.setValue(texte);
-    return;
+    return avant;
   }
 }
 
@@ -370,12 +402,53 @@ function verifierPaiements() {
   let n = 0;
   liste.forEach(function (s) {
     if (s.payment_status === 'paid' && REF_RE.test(String(s.client_reference_id || ''))) {
-      marquer(s.client_reference_id, 'Payé ' + (s.amount_total / 100) + ' € le ' + Utilities.formatDate(new Date(s.created * 1000), 'Europe/Paris', 'dd/MM HH:mm') + (s.livemode ? '' : ' (TEST)'), true);
-      envoyerTicketSiBesoin(s.client_reference_id);
+      paiementRecu(s);
       n++;
     }
   });
   console.log(n + ' paiement(s) reporté(s) dans le Sheet');
+}
+
+/**
+ * Paiement confirmé par Stripe : « Payé » dans le Sheet, puis (une seule fois) ticket repas ou e-mail de
+ * confirmation au client, et e-mail à l'organisation. Appelé au retour du client et par le déclencheur horaire.
+ */
+function paiementRecu(s) {
+  const ref = String(s.client_reference_id || '');
+  if (!REF_RE.test(ref)) return;
+  const texte = 'Payé ' + (s.amount_total / 100) + ' € le ' + Utilities.formatDate(new Date(s.created * 1000), 'Europe/Paris', 'dd/MM HH:mm') + (s.livemode ? '' : ' (TEST)');
+  const lock = LockService.getScriptLock();
+  let nouveau = false;
+  try {
+    lock.waitLock(10000);
+    const avant = marquer(ref, texte, true);
+    nouveau = avant !== undefined && !/^Payé/.test(String(avant));
+  } finally {
+    lock.releaseLock();
+  }
+  if (ref.charAt(0) === 'R') envoyerTicketSiBesoin(ref);
+  if (nouveau) { try { mailsPaiement(ref, s.amount_total / 100, !s.livemode); } catch (err) { console.error('mailsPaiement', err); } }
+}
+
+/** E-mail de confirmation au client (stand, partenaire) et e-mail à l'organisation, une fois par paiement. */
+function mailsPaiement(ref, montant, test) {
+  const l = ligneRepas(ref);
+  if (!l) return;
+  const d = l.d, quoi = TYPE_DE[ref.charAt(0)], nom = String(d.nom || '').replace(/[<>]/g, '').slice(0, 60);
+  const quoiTexte = {repas: d.repas + ' repas', stand: 'stand « ' + d.categorie + ' »' + (d.stand ? ' (n° ' + d.stand + ' souhaité)' : ''), partenaire: 'offre partenaire « ' + d.offre + ' »'}[quoi];
+  const aFaire = quoi === 'stand' ? 'À faire : appeler l\'exposant pour confirmer son emplacement, puis le noter dans l\'onglet Plan.'
+    : quoi === 'partenaire' ? 'À faire : rappeler le partenaire (logo avant le 1er décembre, tournage), puis l\'ajouter dans l\'onglet Logos.'
+    : 'Le ticket repas est parti automatiquement.';
+  MailApp.sendEmail({to: NOTIFIER || Session.getEffectiveUser().getEmail(), subject: NOM_EVENT + ' · paiement reçu' + (test ? ' (TEST)' : '') + ' · ' + montant + ' €',
+    body: 'Paiement reçu' + (test ? ' en mode TEST (pas de vrai argent)' : '') + ' : ' + montant + ' € TTC\n\n' + quoiTexte + '\n' + (d.entreprise ? 'Entreprise : ' + d.entreprise + '\n' : '')
+      + 'Nom : ' + nom + '\nTéléphone : ' + (d.tel || '-') + '\nE-mail : ' + (d.email || '-') + '\nRéférence : ' + ref + '\n\n' + aFaire
+      + '\n\nTout est dans le Google Sheet : ' + SpreadsheetApp.getActiveSpreadsheet().getUrl()});
+  if (quoi === 'repas' || !MAIL_RE.test(String(d.email || ''))) return;   // repas : le ticket fait office de confirmation
+  const txt = quoi === 'stand'
+    ? 'Nous avons bien reçu votre paiement de ' + montant + ' € TTC pour votre ' + quoiTexte + ' au ' + NOM_EVENT + '.\n\nL\'organisation vous appelle au ' + (d.tel || 'numéro indiqué') + ' pour confirmer votre emplacement. Installation le vendredi 18 décembre de 8 h à 11 h, ouverture à 14 h. La tonnelle est à décorer par vos soins, sur le thème de Noël.'
+    : 'Nous avons bien reçu votre paiement de ' + montant + ' € TTC pour l\'' + quoiTexte + '. Merci de soutenir le ' + NOM_EVENT + ' !\n\nNous vous rappelons sous 48 h pour la suite : votre logo (à nous envoyer avant le 1er décembre), les photos et vidéos, et vos repas offerts.';
+  MailApp.sendEmail({to: String(d.email), subject: NOM_EVENT + ' · paiement bien reçu', name: NOM_EVENT,
+    body: 'Bonjour ' + nom + ',\n\n' + txt + '\n\nBesoin d\'une facture ? Écrivez à ' + MAIL_FACTURE + ' en indiquant votre référence : ' + ref + '.\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nÀ très vite,\nL\'équipe du ' + NOM_EVENT + '\n' + DATES});
 }
 
 
@@ -403,9 +476,10 @@ function signer(ref) {
 /** Contenu du QR code : R-XXXXXXXX-SIGNATURE */
 function codeTicket(ref) { return ref + '-' + signer(ref); }
 
-/** Lit une ligne de l'onglet Repas par sa référence. */
+/** Lit une ligne par sa référence (onglet Repas, Stands ou Partenaires selon la première lettre). */
 function ligneRepas(ref) {
-  const o = ONGLETS.repas, sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(o.nom);
+  if (!REF_RE.test(String(ref || ''))) return null;
+  const o = ONGLETS[TYPE_DE[ref.charAt(0)]], sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(o.nom);
   if (!sh || sh.getLastRow() < 2) return null;
   entetes(sh, o);
   const cles = o.cols.map(function (c) { return c[0]; });
@@ -483,7 +557,7 @@ function envoyerTicket(d) {
   const pdf = Utilities.newBlob(html, 'text/html', 'ticket.html').getAs('application/pdf').setName('Ticket-repas-' + d.ref + '.pdf');
   const corps = 'Bonjour ' + String(d.nom).replace(/[<>]/g, '') + ',\n\nMerci pour votre paiement ! Vous trouverez votre ticket repas en pièce jointe (PDF).\n\n'
     + 'Le jour du marché, présentez le QR code à l\'accueil (sur votre téléphone ou imprimé) : on vous remet vos tickets, à échanger dans le stand de votre choix.\n'
-    + 'Attention : le QR code ne fonctionne qu\'une seule fois, ne le partagez pas.\n\nRéférence : ' + d.ref + '\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nÀ très vite,\nL\'équipe du ' + NOM_EVENT + '\n' + DATES;
+    + 'Attention : le QR code ne fonctionne qu\'une seule fois, ne le partagez pas.\n\nBesoin d\'une facture ? Écrivez à ' + MAIL_FACTURE + ' avec votre référence.\nRéférence : ' + d.ref + '\n\nUne question ? Appelez le ' + TELEPHONE + '.\n\nÀ très vite,\nL\'équipe du ' + NOM_EVENT + '\n' + DATES;
   MailApp.sendEmail({to: String(d.email), subject: NOM_EVENT + ' · votre ticket repas', body: corps, name: NOM_EVENT, attachments: [pdf]});
 }
 

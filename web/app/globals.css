@@ -761,3 +761,8 @@ form label .facultatif{font-weight:500;color:var(--doux)}
 .lg-c:not(.vide) b{color:var(--rouge);font-size:clamp(14px,1.5vw,18px);line-height:1.08}
 .lg-c i{font:600 11.5px/1.15 var(--fc);font-style:normal;color:var(--encre);opacity:.8}
 .lg-c{gap:4px}
+/* Prix TTC sous les prix HT, sous-titre des portions */
+.xc-prix em{grid-column:1/-1;text-align:center;font:600 12.5px/1.2 var(--fc);font-style:normal;color:rgba(255,255,255,.88);margin-top:2px}
+.ofl-ttc{display:block;font:600 13px/1.2 var(--fc);color:var(--doux);margin:-4px 0 6px}
+.rep-t small{display:block;font:500 13px/1.25 var(--fc);color:var(--doux);margin-top:2px}
+.prog-jour li.sans-h span{grid-column:1/-1}
