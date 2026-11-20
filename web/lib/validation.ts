@@ -43,6 +43,7 @@ export function verifier(v: Record<string, string>): string | null {
   if (v.salaries && !/^\d{1,4}$/.test(v.salaries)) return 'Le nombre de salariés doit être un nombre.';
   for (const k of ['moyennes', 'grandes', 'offerts']) if (v[k] && !/^\d{1,3}$/.test(v[k])) return 'Nombre de repas invalide.';
   if (v.offert_type && !['Moyenne', 'Grande'].includes(v.offert_type)) return 'Type de repas offert invalide.';
+  if (v.ref && !/^R-[A-Z0-9]{8}$/.test(v.ref)) return 'Référence de réservation invalide, rechargez la page.';
   if (v.code_promo) {
     v.code_promo = v.code_promo.replace(/\s+/g, '').toUpperCase();
     if (!CODE_RE.test(v.code_promo)) return 'Code promo invalide : lettres, chiffres et tirets uniquement.';

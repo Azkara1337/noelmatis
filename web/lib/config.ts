@@ -41,8 +41,8 @@ export const CONDITIONS = {
 };
 /** Date de mise à jour des pages légales. */
 export const MAJ_LEGAL = '12 novembre 2026';
-/** Repas : paiement en ligne. Lien de paiement Stripe (Payment Link) avec 2 produits, « Repas moyenne portion » 10 € et « Repas grande portion » 20 €, quantités modifiables. Vide = « paiement en ligne bientôt disponible ». */
-export const PAIEMENT_REPAS_LIEN: string = '';
+/** Repas : paiement en ligne par Stripe, créé par le script Google (clé STRIPE_SECRET dans les propriétés du script). false = « paiement en ligne bientôt disponible ». */
+export const PAIEMENT_EN_LIGNE: boolean = false;   // à passer à true après les tests réels avec la clé Stripe
 /** Texte affiché sous le bouton des repas. */
 export const PAIEMENT = 'Paiement en ligne sécurisé par carte bancaire. Vous recevez ensuite un e-mail de confirmation : présentez-le à l’accueil du marché pour récupérer vos tickets repas.';
 /** Adresse finale du site, pour l'image de partage (og:image). À remplacer après la mise en ligne. */

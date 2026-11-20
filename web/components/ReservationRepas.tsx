@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Formulaire from './Formulaire';
-import { OFFRE_REPAS, PAIEMENT, PAIEMENT_REPAS_LIEN, PRIX_GRANDE, PRIX_MOYENNE, TELEPHONE } from '@/lib/config';
+import { OFFRE_REPAS, PAIEMENT, PAIEMENT_EN_LIGNE, PRIX_GRANDE, PRIX_MOYENNE, TELEPHONE } from '@/lib/config';
+import { BoutonPaiement } from './Paiement';
 
 const fmt = (v: number) => v.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' €';
 const MAX = 50;
@@ -24,6 +25,9 @@ export default function ReservationRepas() {
   const [m, setM] = useState(2);
   const [g, setG] = useState(0);
   const [type, setType] = useState('Moyenne');
+  // Référence de la réservation : relie la ligne du Sheet au paiement Stripe.
+  const [ref, setRef] = useState('');
+  useEffect(() => { const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; const b = new Uint32Array(8); crypto.getRandomValues(b); setRef('R-' + Array.from(b, x => a[x % a.length]).join('')); }, []);
   // L'offre se calcule après le chargement (date du visiteur), pour éviter un écart entre le serveur et le navigateur.
   const [offreActive, setOffreActive] = useState(true);
   useEffect(() => { setOffreActive(Date.now() <= Date.parse(OFFRE_REPAS.fin)); }, []);
@@ -59,13 +63,13 @@ export default function ReservationRepas() {
       </div>
       <Formulaire
         id="frepas" type="repas"
-        champs={['nom', 'email', 'tel', 'profil', 'repas', 'total_ttc', 'code_promo', 'moyennes', 'grandes', 'offerts', 'offert_type']}
+        champs={['nom', 'email', 'tel', 'profil', 'repas', 'total_ttc', 'code_promo', 'moyennes', 'grandes', 'offerts', 'offert_type', 'ref']}
         requis={['nom', 'email', 'repas']}
         erreur="Indiquez votre nom, votre e-mail et au moins un repas."
         titreMerci="Réservation enregistrée"
         recap={v => `Merci ${v.nom} ! ${v.repas} repas (${v.moyennes} moyenne${+v.moyennes > 1 ? 's' : ''}, ${v.grandes} grande${+v.grandes > 1 ? 's' : ''})${+v.offerts > 0 ? ` + ${v.offerts} offert${+v.offerts > 1 ? 's' : ''} (${v.offert_type.toLowerCase()})` : ''}, total ${v.total_ttc} TTC.`}
-        finMerci={PAIEMENT_REPAS_LIEN ? 'Dernière étape : réglez en ligne. Une fois le paiement fait, l’e-mail de confirmation est à présenter à l’accueil pour récupérer vos tickets.' : `Le paiement en ligne ouvre très bientôt : l’organisation vous envoie le lien par e-mail. Une question ? ${TELEPHONE}.`}
-        apresMerci={v => PAIEMENT_REPAS_LIEN ? <a className="btn plein payer" href={`${PAIEMENT_REPAS_LIEN}${PAIEMENT_REPAS_LIEN.includes('?') ? '&' : '?'}prefilled_email=${encodeURIComponent(v.email)}`} target="_blank" rel="noopener">Payer {v.total_ttc} en ligne</a> : null}
+        finMerci={PAIEMENT_EN_LIGNE ? 'Dernière étape : réglez en ligne. Le reçu de paiement est à présenter à l’accueil pour récupérer vos tickets.' : `Le paiement en ligne ouvre très bientôt : l’organisation vous envoie le lien par e-mail. Une question ? ${TELEPHONE}.`}
+        apresMerci={v => PAIEMENT_EN_LIGNE && v.ref ? <BoutonPaiement v={v} /> : null}
         bouton={<>Réserver <span id="rbtn">{nb} repas · {total}</span></>}
         apres={<p className="doux paie" style={{ fontSize: '12px' }}>{PAIEMENT}</p>}
       >
@@ -75,6 +79,7 @@ export default function ReservationRepas() {
         <label>Je réserve en tant que<select id="re-type" name="profil"><option>Particulier</option><option>Entreprise (facture)</option></select></label>
         {offerts > 0 && <label>{offerts > 1 ? 'Mes repas offerts' : 'Mon repas offert'}<select name="offert_type" value={type} onChange={e => setType(e.target.value)}><option value="Moyenne">Moyenne portion</option><option value="Grande">Grande portion</option></select></label>}
         <label><span>Code promo <small className="facultatif">(facultatif)</small></span><input name="code_promo" autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={30} placeholder="Ex. NOEL2026" /></label>
+        <input type="hidden" name="ref" value={ref} />
         <input type="hidden" name="repas" value={nb > 0 ? String(nb) : ''} />
         <input type="hidden" name="moyennes" value={String(m)} />
         <input type="hidden" name="grandes" value={String(g)} />

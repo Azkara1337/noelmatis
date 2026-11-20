@@ -15,6 +15,8 @@ Site du Marché de Noël des Artisans & Commerçants, **vendredi 18, samedi 19 e
 - `assets/` : photos originales en pleine qualité (le site utilise les copies de `web/public/img/`). `maquettes/` : maquettes JPG du client, référence de style. Aucun des deux n'est utilisé par le build.
 - `MISE_EN_LIGNE.md` : la procédure complète. Lis-la avant d'agir.
 - `web/components/Invites.tsx` : page Invités (carte de l'hôte + grille compacte) et bandeau qui défile sur l'accueil. Photos : `public/img/invites/profils/` (photos de profil Instagram 150 px, en avatars), `detour/` (détourages HD agrandis avec Artlist, originaux dans `assets/invites/hd/`).
+- `web/components/Paiement.tsx` : bouton « Payer en ligne » (demande au script `?action=paiement`, qui crée la session Stripe Checkout avec le prix calculé côté serveur) et bandeau de retour (`?paiement=ok&session=…` vérifié par `?action=verif`). Clé Stripe : propriété `STRIPE_SECRET` du script Google, jamais dans le code. Interrupteur : `PAIEMENT_EN_LIGNE` dans config.ts.
+- `google-apps-script/tests/stripe.test.js` : tests unitaires du script (faux Stripe, faux Sheet) : `node google-apps-script/tests/stripe.test.js`.
 - `web/components/ProgrammeCompteur.tsx` : compte à rebours jusqu'à `PROGRAMME_REVELE` (3/12 9 h), puis le programme jour par jour (`PROGRAMME` dans config.ts).
 
 ## Réglages (`web/lib/config.ts`)

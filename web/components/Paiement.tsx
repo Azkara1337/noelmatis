@@ -1,0 +1,57 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { ENDPOINT, TELEPHONE } from '@/lib/config';
+import type { Valeurs } from './Formulaire';
+
+/** Bouton « Payer en ligne » : le script Google crée la page de paiement Stripe (prix recalculé côté serveur). */
+export function BoutonPaiement({ v }: { v: Valeurs }) {
+  const [etat, setEtat] = useState<'pret' | 'attente' | 'erreur'>('pret');
+  async function payer() {
+    setEtat('attente');
+    try {
+      const q = new URLSearchParams({ action: 'paiement', m: v.moyennes || '0', g: v.grandes || '0', email: v.email, ref: v.ref, type: v.offert_type || '' });
+      const r = await fetch(`${ENDPOINT}?${q}`);
+      const d = await r.json();
+      if (d && d.ok && typeof d.url === 'string' && d.url.startsWith('https://checkout.stripe.com/')) { window.location.href = d.url; return; }
+      setEtat('erreur');
+    } catch {
+      setEtat('erreur');
+    }
+  }
+  return (
+    <div className="payer-z">
+      <button type="button" className="btn plein payer" onClick={payer} disabled={etat === 'attente'}>{etat === 'attente' ? 'Ouverture du paiement…' : `Payer ${v.total_ttc} en ligne`}</button>
+      <p className="doux payer-note">{etat === 'erreur' ? `Le paiement n’a pas pu s’ouvrir. Réessayez dans un instant ou appelez le ${TELEPHONE}.` : 'Paiement sécurisé par Stripe · carte bancaire, Apple Pay, Google Pay'}</p>
+    </div>
+  );
+}
+
+/** Bandeau affiché au retour de Stripe (?paiement=ok&session=… ou ?paiement=annule). */
+export function RetourPaiement() {
+  const [etat, setEtat] = useState<null | 'verif' | 'paye' | 'nonpaye' | 'annule' | 'erreur'>(null);
+  const [total, setTotal] = useState('');
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const p = q.get('paiement'), session = q.get('session') || '';
+    if (p === 'annule') { setEtat('annule'); return; }
+    if (p !== 'ok' || !/^cs_(test|live)_[A-Za-z0-9]+$/.test(session)) return;
+    setEtat('verif');
+    fetch(`${ENDPOINT}?${new URLSearchParams({ action: 'verif', session })}`)
+      .then(r => r.json())
+      .then(d => { if (d && d.ok) { setTotal(d.total ? `${d.total} €` : ''); setEtat(d.paye ? 'paye' : 'nonpaye'); } else setEtat('erreur'); })
+      .catch(() => setEtat('erreur'));
+  }, []);
+  if (!etat) return null;
+  const textes = {
+    verif: ['Vérification du paiement…', ''],
+    paye: ['Paiement confirmé ✓', `Merci ! ${total ? total + ' réglés. ' : ''}Vous allez recevoir le reçu de paiement par e-mail. Le jour du marché, présentez-le à l’accueil pour récupérer vos tickets repas.`],
+    nonpaye: ['Paiement non finalisé', `Votre paiement n’a pas abouti. Vous pouvez refaire une réservation ci-dessous, ou appeler le ${TELEPHONE}.`],
+    annule: ['Paiement annulé', 'Aucun montant n’a été débité. Vous pouvez refaire votre réservation ci-dessous quand vous voulez.'],
+    erreur: ['Paiement à vérifier', `Nous n’avons pas pu vérifier le paiement automatiquement. Si vous avez été débité, tout est bon : l’organisation le verra. Une question ? ${TELEPHONE}.`],
+  }[etat];
+  return (
+    <div className={'retour-paie carte ' + etat} role="status">
+      <b>{textes[0]}</b>{textes[1] && <p>{textes[1]}</p>}
+    </div>
+  );
+}

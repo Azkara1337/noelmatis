@@ -725,3 +725,13 @@ form label .facultatif{font-weight:500;color:var(--doux)}
 /* accueil : bloc des valeurs en bas */
 .pt-bas{margin-top:34px}
 .pt-card:not(.pt-bas){padding-top:26px!important;padding-bottom:22px!important}.pt-card:not(.pt-bas) .pt-txt{margin-top:0!important}
+
+/* repas : paiement en ligne */
+.payer-z{display:grid;justify-items:center;gap:8px;margin-top:14px}
+.payer{font-size:18px!important;padding:14px 26px!important}
+.payer-note{font-size:12px;margin:0}
+.retour-paie{max-width:760px;margin:0 auto 22px;padding:18px 22px!important;display:grid;gap:6px;text-align:center}
+.retour-paie b{font:800 22px/1.2 var(--fc);color:var(--rouge2)}
+.retour-paie.paye{border-color:var(--sapin)!important;background:#f1f8ec!important}
+.retour-paie.paye b{color:var(--sapin)}
+.retour-paie p{margin:0;font-size:15px;color:var(--doux)}

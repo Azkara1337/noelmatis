@@ -33,12 +33,13 @@ const DATES = 'vendredi 18, samedi 19 et dimanche 20 décembre 2026';
 const TELEPHONE = '05 34 03 24 40';
 const STANDS_DEJA = {7: 'Crêpes', 11: 'Churros', 24: 'Aligot', 25: 'Brasero', 26: 'Vin chaud', 27: 'Raclette'};
 const PRIX_MOYENNE = 10, PRIX_GRANDE = 20;           // repas, en € TTC (mêmes valeurs que web/lib/config.ts)
-const OFFRE_LOT = 5, OFFRE_FIN = '2026-12-10T23:59:59+01:00';   // 5 repas achetés = 1 offert, jusqu'au 10 décembre inclus
+const OFFRE_LOT = 5, OFFRE_FIN = '2026-12-10T23:59:59+01:00';
+const SITE = 'https://www.noel-rcimmo.fr';      // adresse du site, pour le retour après paiement Stripe   // 5 repas achetés = 1 offert, jusqu'au 10 décembre inclus
 // =====================
 
 const ONGLETS = {
   stand: {nom: 'Stands', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['nom', 'Nom'], ['activite', 'Activité'], ['tel', 'Téléphone'], ['email', 'E-mail'], ['stand', 'Stand souhaité'], ['categorie', 'Catégorie'], ['message', 'Message'], ['code_promo', 'Code promo']]},
-  repas: {nom: 'Repas', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['nom', 'Nom'], ['email', 'E-mail'], ['tel', 'Téléphone'], ['profil', 'Profil'], ['repas', 'Nb repas'], ['total_ttc', 'Total TTC'], ['code_promo', 'Code promo'], ['moyennes', 'Moyennes'], ['grandes', 'Grandes'], ['offerts', 'Offerts'], ['offert_type', 'Type offert']]},
+  repas: {nom: 'Repas', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['nom', 'Nom'], ['email', 'E-mail'], ['tel', 'Téléphone'], ['profil', 'Profil'], ['repas', 'Nb repas'], ['total_ttc', 'Total TTC'], ['code_promo', 'Code promo'], ['moyennes', 'Moyennes'], ['grandes', 'Grandes'], ['offerts', 'Offerts'], ['offert_type', 'Type offert'], ['ref', 'Référence'], ['paiement', 'Paiement']]},
   partenaire: {nom: 'Partenaires', cols: [['date', 'Reçu le'], ['statut', 'Suivi'], ['entreprise', 'Entreprise'], ['nom', 'Contact'], ['tel', 'Téléphone'], ['email', 'E-mail'], ['salaries', 'Salariés'], ['offre', 'Offre'], ['message', 'Message'], ['code_promo', 'Code promo']]}
 };
 
@@ -80,6 +81,8 @@ function installer() {
 function doGet(e) {
   const action = e && e.parameter && e.parameter.action;
   if (action === 'partenaires') return json({partenaires: partenaires()});
+  if (action === 'paiement') return json(creerPaiement(e.parameter));
+  if (action === 'verif') return json(verifierSession(String(e.parameter.session || '')));
   if (action !== 'plan') return json({ok: true});
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Plan');
   const pris = {};
@@ -138,6 +141,7 @@ const REQUIS = {stand: ['nom', 'tel'], repas: ['nom', 'email'], partenaire: ['en
 const MAX_PAR_HEURE = 30;          // au-delà, les demandes sont refusées pendant l'heure (anti-spam)
 const MAIL_RE = /^[^\s@<>"'`]+@[^\s@<>"'`]+\.[a-z]{2,}$/i;
 const TEL_RE = /^(?:0[1-9]\d{8}|\+[1-9]\d{7,14})$/;
+const REF_RE = /^R-[A-Z0-9]{8}$/;                 // référence d'une réservation de repas (créée par le site)
 const NOM_RE = /^[\p{L}\p{M}0-9 '’.,&()\/+-]+$/u;
 
 function doPost(e) {
@@ -171,6 +175,8 @@ function doPost(e) {
       d.total_ttc = (m * PRIX_MOYENNE + g * PRIX_GRANDE) + ' €';
       d.offerts = String(offerts);
       d.offert_type = offerts > 0 ? (d.offert_type === 'Grande' ? 'Grande' : 'Moyenne') : '';
+      d.ref = REF_RE.test(String(d.ref || '')) ? String(d.ref) : '';
+      d.paiement = d.ref ? 'Non payé' : '';
     }
     if (!quota()) return json({ok: false, erreur: 'trop de demandes'});
     d.date = Utilities.formatDate(new Date(), 'Europe/Paris', 'dd/MM/yyyy HH:mm');
@@ -241,4 +247,128 @@ function confirmer(d) {
 
 function json(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+
+// ===================== Paiement en ligne des repas (Stripe) =====================
+// La clé secrète Stripe n'est jamais dans ce fichier : Paramètres du projet (roue dentée) > Propriétés du script >
+// ajouter STRIPE_SECRET = sk_test_… (tests) ou rk_live_… / sk_live_… (réel).
+// Le prix est calculé ici, jamais dans le navigateur. Aucun produit à créer dans Stripe : les lignes sont envoyées
+// directement (price_data).
+
+function cleStripe() {
+  return PropertiesService.getScriptProperties().getProperty('STRIPE_SECRET') || '';
+}
+
+/** Appel à l'API Stripe. Lève une erreur lisible si Stripe refuse. */
+function stripe(methode, chemin, params) {
+  const cle = cleStripe();
+  if (!cle) throw new Error('clé Stripe absente (propriété STRIPE_SECRET)');
+  const opt = {method: methode, headers: {Authorization: 'Bearer ' + cle}, muteHttpExceptions: true};
+  if (params) { opt.payload = encoder(params); opt.contentType = 'application/x-www-form-urlencoded'; }
+  const r = UrlFetchApp.fetch('https://api.stripe.com/v1/' + chemin, opt);
+  const corps = JSON.parse(r.getContentText());
+  if (r.getResponseCode() >= 400) throw new Error((corps.error && corps.error.message) || 'erreur Stripe ' + r.getResponseCode());
+  return corps;
+}
+
+/** Objet imbriqué -> format attendu par Stripe : line_items[0][price_data][currency]=eur&… */
+function encoder(obj, prefixe) {
+  const morceaux = [];
+  Object.keys(obj).forEach(function (k) {
+    const v = obj[k], cle = prefixe ? prefixe + '[' + k + ']' : k;
+    if (v === undefined || v === null || v === '') return;
+    if (typeof v === 'object') morceaux.push(encoder(v, cle));
+    else morceaux.push(encodeURIComponent(cle) + '=' + encodeURIComponent(String(v)));
+  });
+  return morceaux.filter(String).join('&');
+}
+
+/** Montant et repas offerts, calculés côté serveur. */
+function calculRepas(m, g) {
+  const offerts = new Date() <= new Date(OFFRE_FIN) ? Math.floor((m + g) / OFFRE_LOT) : 0;
+  return {offerts: offerts, total: m * PRIX_MOYENNE + g * PRIX_GRANDE};
+}
+
+/** GET ?action=paiement&m=2&g=1&email=…&ref=R-XXXXXXXX&type=Moyenne -> {ok, url} (page de paiement Stripe). */
+function creerPaiement(p) {
+  try {
+    if (!quota()) return {ok: false, erreur: 'trop de demandes'};
+    const m = parseInt(p.m || '0', 10), g = parseInt(p.g || '0', 10);
+    if (!(m >= 0 && m <= 99 && g >= 0 && g <= 99 && m + g > 0)) return {ok: false, erreur: 'nombre de repas invalide'};
+    const email = String(p.email || '').trim();
+    if (!MAIL_RE.test(email)) return {ok: false, erreur: 'e-mail invalide'};
+    const ref = String(p.ref || '');
+    if (!REF_RE.test(ref)) return {ok: false, erreur: 'référence invalide'};
+    const c = calculRepas(m, g);
+    const typeOffert = c.offerts > 0 ? (p.type === 'Grande' ? 'grande' : 'moyenne') : '';
+    const lignes = [];
+    if (m) lignes.push({price_data: {currency: 'eur', unit_amount: PRIX_MOYENNE * 100, product_data: {name: 'Repas · moyenne portion'}}, quantity: m});
+    if (g) lignes.push({price_data: {currency: 'eur', unit_amount: PRIX_GRANDE * 100, product_data: {name: 'Repas · grande portion'}}, quantity: g});
+    if (c.offerts > 0) lignes[0].price_data.product_data.description = '+ ' + c.offerts + ' repas offert' + (c.offerts > 1 ? 's' : '') + ' (' + typeOffert + ' portion), remis à l\'accueil';
+    const session = stripe('post', 'checkout/sessions', {
+      mode: 'payment',
+      locale: 'fr',
+      customer_email: email,
+      client_reference_id: ref,
+      success_url: SITE + '/repas/?paiement=ok&session={CHECKOUT_SESSION_ID}',
+      cancel_url: SITE + '/repas/?paiement=annule',
+      line_items: lignes,
+      metadata: {ref: ref, moyennes: m, grandes: g, offerts: c.offerts, type_offert: typeOffert},
+      payment_intent_data: {description: NOM_EVENT + ' · repas · ' + ref}
+    });
+    marquer(ref, 'Paiement en cours', false);
+    return {ok: true, url: session.url};
+  } catch (err) {
+    console.error('creerPaiement', err);
+    return {ok: false, erreur: String(err.message || err)};
+  }
+}
+
+/** GET ?action=verif&session=cs_… -> {ok, paye, total, ref}. Marque la ligne « Payé » dans l'onglet Repas. */
+function verifierSession(id) {
+  try {
+    if (!/^cs_(test|live)_[A-Za-z0-9]+$/.test(id)) return {ok: false, erreur: 'session invalide'};
+    const s = stripe('get', 'checkout/sessions/' + encodeURIComponent(id));
+    const paye = s.payment_status === 'paid';
+    if (paye) marquer(s.client_reference_id, 'Payé ' + (s.amount_total / 100) + ' € le ' + Utilities.formatDate(new Date(s.created * 1000), 'Europe/Paris', 'dd/MM HH:mm') + (/^cs_test_/.test(id) ? ' (TEST)' : ''), true);
+    return {ok: true, paye: paye, total: s.amount_total / 100, ref: s.client_reference_id};
+  } catch (err) {
+    console.error('verifierSession', err);
+    return {ok: false, erreur: String(err.message || err)};
+  }
+}
+
+/** Écrit l'état du paiement sur la ligne de la réservation (colonne Paiement). Ne remplace jamais un « Payé ». */
+function marquer(ref, texte, force) {
+  if (!REF_RE.test(String(ref || ''))) return;
+  const o = ONGLETS.repas, sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(o.nom);
+  if (!sh || sh.getLastRow() < 2) return;
+  entetes(sh, o);
+  const cRef = o.cols.map(function (c) { return c[0]; }).indexOf('ref') + 1;
+  const cPay = o.cols.map(function (c) { return c[0]; }).indexOf('paiement') + 1;
+  const refs = sh.getRange(2, cRef, sh.getLastRow() - 1, 1).getValues();
+  for (let i = refs.length - 1; i >= 0; i--) {
+    if (String(refs[i][0]) !== ref) continue;
+    const cell = sh.getRange(i + 2, cPay), avant = String(cell.getValue());
+    if (!force && /^Payé/.test(avant)) return;
+    cell.setValue(texte);
+    return;
+  }
+}
+
+/**
+ * À lancer à la main (ou avec un déclencheur horaire) : reprend les 100 derniers paiements Stripe
+ * et marque « Payé » les réservations dont le client n'est pas revenu sur le site après avoir payé.
+ */
+function verifierPaiements() {
+  const liste = stripe('get', 'checkout/sessions?limit=100').data || [];
+  let n = 0;
+  liste.forEach(function (s) {
+    if (s.payment_status === 'paid' && REF_RE.test(String(s.client_reference_id || ''))) {
+      marquer(s.client_reference_id, 'Payé ' + (s.amount_total / 100) + ' € le ' + Utilities.formatDate(new Date(s.created * 1000), 'Europe/Paris', 'dd/MM HH:mm') + (s.livemode ? '' : ' (TEST)'), true);
+      n++;
+    }
+  });
+  console.log(n + ' paiement(s) reporté(s) dans le Sheet');
 }
