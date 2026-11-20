@@ -310,6 +310,7 @@ function creerPaiement(p) {
     if (c.offerts > 0) lignes[0].price_data.product_data.description = '+ ' + c.offerts + ' repas offert' + (c.offerts > 1 ? 's' : '') + ' (' + typeOffert + ' portion), remis à l\'accueil';
     const session = stripe('post', 'checkout/sessions', {
       mode: 'payment',
+      payment_method_types: ['card'],   // carte (Apple Pay et Google Pay compris) : paiement confirmé tout de suite
       locale: 'fr',
       customer_email: email,
       client_reference_id: ref,
