@@ -799,3 +799,5 @@ form label .facultatif{font-weight:500;color:var(--doux)}
 
 .promo-aide{display:block;font-size:13px;line-height:1.35;color:var(--doux);margin-top:2px}
 .promo-aide a{color:var(--rouge);font-weight:700}
+/* /repas sur mobile : le formulaire juste après le choix des repas, les 3 étapes en dessous */
+@media(max-width:960px){.rep-g{display:contents}.rep-calc{order:1}.rep-offre{order:2}#frepas{order:3}.etapes{order:4}}
