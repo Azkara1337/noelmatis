@@ -81,8 +81,8 @@ t('facture prête plus tard : envoyée seule au passage suivant, une fois', () =
   prete = true; c.verifierSession('cs_test_A'); c.verifierSession('cs_test_A');
   const f = c.env.mails.filter(m => /votre facture n° RC-0001/.test(m.subject)); assert.strictEqual(f.length, 1); assert.strictEqual(f[0].attachments[0].nom, 'Facture-RC-0001.pdf'); });
 t('réservation de repas : pas d\'e-mail avant le paiement (quota Gmail)', () => { const c = charger(); post(c, { type: 'repas', nom: 'Jean', email: 'r@x.fr', moyennes: '1', ref: 'R-ABCD2345' }); assert.strictEqual(c.env.mails.length, 0); });
-t('taux de TVA créé une seule fois (20 % hors taxes, 10 % TTC pour les repas)', () => { const c = charger(); c.creerPaiement({ quoi: 'stand', cat: 'Artisanat, créations', email: 'e@x.fr', ref: 'S-ABCD2345' }); c.creerPaiement({ quoi: 'stand', cat: 'Artisanat, créations', email: 'e@x.fr', ref: 'S-ABCD2346' }); c.creerPaiement({ quoi: 'repas', m: '1', email: 'e@x.fr', ref: 'R-ABCD2345' });
-  const tx = c.env.appels.filter(a => /tax_rates$/.test(a.url)).map(a => decode(a.o.payload)); assert.deepStrictEqual(tx.map(x => [x.percentage, x.inclusive]), [['20', 'false'], ['10', 'true']]); });
+t('taux de TVA créé une seule fois (20 % hors taxes, 20 % incluse pour les repas)', () => { const c = charger(); c.creerPaiement({ quoi: 'stand', cat: 'Artisanat, créations', email: 'e@x.fr', ref: 'S-ABCD2345' }); c.creerPaiement({ quoi: 'stand', cat: 'Artisanat, créations', email: 'e@x.fr', ref: 'S-ABCD2346' }); c.creerPaiement({ quoi: 'repas', m: '1', email: 'e@x.fr', ref: 'R-ABCD2345' });
+  const tx = c.env.appels.filter(a => /tax_rates$/.test(a.url)).map(a => decode(a.o.payload)); assert.deepStrictEqual(tx.map(x => [x.percentage, x.inclusive]), [['20', 'false'], ['20', 'true']]); });
 
 console.log('E-mails par Resend');
 const resend = (code) => (url, o) => /api\.resend\.com/.test(url) ? { code, corps: code < 300 ? { id: 'e1' } : { message: 'domaine non vérifié' } } : avecFacture('R-ABCD2345', 4000)(url, o);
