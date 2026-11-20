@@ -761,3 +761,29 @@ form label .facultatif{font-weight:500;color:var(--doux)}
 .lg-c:not(.vide) b{color:var(--rouge);font-size:clamp(14px,1.5vw,18px);line-height:1.08}
 .lg-c i{font:600 11.5px/1.15 var(--fc);font-style:normal;color:var(--encre);opacity:.8}
 .lg-c{gap:4px}
+/* Prix TTC sous les prix HT, sous-titre des portions */
+.xc-prix em{grid-column:1/-1;text-align:center;font:600 12.5px/1.2 var(--fc);font-style:normal;color:rgba(255,255,255,.88);margin-top:2px}
+.ofl-ttc{display:block;font:600 13px/1.2 var(--fc);color:var(--doux);margin:-4px 0 6px}
+.rep-t small{display:block;font:500 13px/1.25 var(--fc);color:var(--doux);margin-top:2px}
+.prog-jour li.sans-h span{grid-column:1/-1}
+
+/* ===== Page Paiement (/paiement) et page 404 ===== */
+#paiement,#introuvable{padding:28px 0 64px}
+.paie-carte{max-width:640px;margin:0 auto;padding:34px 28px;text-align:center;display:grid;gap:14px;justify-items:center;border:2px solid var(--or);border-radius:20px}
+.paie-carte h2{margin:0;font:800 clamp(26px,4.5vw,34px)/1.1 var(--fc);color:var(--rouge2,#a3180f)}
+.paie-carte p{margin:0;max-width:52ch}
+.paie-ic{width:76px;height:76px;border-radius:50%;display:grid;place-items:center;font:800 38px/1 var(--fc);color:#fff;background:linear-gradient(180deg,#d8322a,#a3180f);border:3px solid var(--or);box-shadow:0 10px 24px rgba(163,24,15,.28)}
+.paie-carte.paye .paie-ic{background:linear-gradient(180deg,#3f8a3a,#2e5e2a)}
+.paie-carte.verif .paie-ic{background:linear-gradient(180deg,#e0b04a,#c8962e);animation:paie-p 1.4s ease-in-out infinite}
+@keyframes paie-p{50%{transform:scale(1.08)}}
+.paie-merci{font:700 19px/1.4 var(--fc)}
+.paie-etapes{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:10px;text-align:left;width:100%;max-width:520px}
+.paie-etapes li{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start;background:#fff;border:1.5px solid #ecd3a0;border-radius:12px;padding:12px 14px;font-size:15px;line-height:1.45}
+.paie-etapes li span{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--rouge);color:#fff;font:800 15px/1 var(--fc)}
+.paie-ref{font-size:14px}
+.paie-btns{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:6px}
+.paie-note{font-size:13px}
+.p404-n{font:800 clamp(72px,16vw,120px)/1 var(--fc);color:var(--rouge);letter-spacing:.02em;text-shadow:0 6px 0 rgba(200,150,46,.35)}
+.p404-n span{display:inline-block;color:var(--or);font-size:.8em;margin:0 .04em;animation:p404 6s linear infinite}
+@keyframes p404{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.p404-n span,.paie-carte.verif .paie-ic{animation:none}}

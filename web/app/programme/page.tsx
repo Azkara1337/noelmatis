@@ -9,7 +9,7 @@ export default function Programme() {
       <div className="plank"><div className="plank-b"><span className="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2" /><path d="M3.5 10h17M8 3v4M16 3v4M12 12.2l1.1 2.2 2.4.3-1.8 1.7.5 2.4-2.2-1.2-2.2 1.2.5-2.4-1.8-1.7 2.4-.3z" /></svg></span><div className="pk-t"><h1>Programme Magique</h1><p>Spectacles, animations, invités : tout le programme du marché</p></div></div><span className="pk-lant" aria-hidden="true"></span></div><section className="prog"><div className="wrap">
         <div className="prog-scene" style={{backgroundImage:'url(/img/d_curtain.webp)'}}>
           <h2 className="prog-h">Un programme exceptionnel vous attend !</h2>
-          <div className="ruban"><span>Le programme complet sera dévoilé le <b>3 décembre</b> !</span></div>
+          <div className="ruban"><span>Le programme complet sera dévoilé le <b>14 décembre</b> !</span></div>
           <p className="prog-list">Spectacles, animations, rencontres, démonstrations, invités surprises, défis, jeux, dégustations, moments d'exception…</p>
           <p className="prog-script">Préparez-vous à vivre 3 jours de magie, de partage et d'émotions !</p>
           <div className="prog-stage">

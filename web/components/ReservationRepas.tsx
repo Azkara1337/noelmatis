@@ -2,16 +2,16 @@
 import { useEffect, useState } from 'react';
 import Formulaire from './Formulaire';
 import { OFFRE_REPAS, PAIEMENT, PAIEMENT_EN_LIGNE, PRIX_GRANDE, PRIX_MOYENNE, TELEPHONE } from '@/lib/config';
-import { BoutonPaiement } from './Paiement';
+import { BoutonPaiement, useReference } from './Paiement';
 
 const fmt = (v: number) => v.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' €';
 const MAX = 50;
 
 /** Un compteur − n + pour une portion. */
-function Compteur({ id, titre, prix, n, setN }: { id: string; titre: string; prix: number; n: number; setN: (n: number) => void }) {
+function Compteur({ id, titre, desc, prix, n, setN }: { id: string; titre: string; desc: string; prix: number; n: number; setN: (n: number) => void }) {
   return (
     <div className="rep-portion">
-      <div className="rep-t"><b>{titre}</b><span>{fmt(prix)} TTC</span></div>
+      <div className="rep-t"><b>{titre}</b><span>{fmt(prix)} TTC</span><small>{desc}</small></div>
       <div className="rep-cpt">
         <button type="button" aria-label={'Une ' + titre.toLowerCase() + ' de moins'} onClick={() => setN(Math.max(0, n - 1))} disabled={n === 0}>−</button>
         <output id={id} aria-live="polite">{n}</output>
@@ -26,8 +26,7 @@ export default function ReservationRepas() {
   const [g, setG] = useState(0);
   const [type, setType] = useState('Moyenne');
   // Référence de la réservation : relie la ligne du Sheet au paiement Stripe.
-  const [ref, setRef] = useState('');
-  useEffect(() => { const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; const b = new Uint32Array(8); crypto.getRandomValues(b); setRef('R-' + Array.from(b, x => a[x % a.length]).join('')); }, []);
+  const ref = useReference('repas');
   // L'offre se calcule après le chargement (date du visiteur), pour éviter un écart entre le serveur et le navigateur.
   const [offreActive, setOffreActive] = useState(true);
   useEffect(() => { setOffreActive(Date.now() <= Date.parse(OFFRE_REPAS.fin)); }, []);
@@ -42,8 +41,8 @@ export default function ReservationRepas() {
       <div className="rep-g">
         <div className="rep-calc">
           <div className="rep-portions">
-            <Compteur id="nr-m" titre="Moyenne portion" prix={PRIX_MOYENNE} n={m} setN={setM} />
-            <Compteur id="nr-g" titre="Grande portion" prix={PRIX_GRANDE} n={g} setN={setG} />
+            <Compteur id="nr-m" titre="Moyenne portion" desc="Pour découvrir une de nos spécialités" prix={PRIX_MOYENNE} n={m} setN={setM} />
+            <Compteur id="nr-g" titre="Grande portion" desc="Pour découvrir plusieurs de nos spécialités" prix={PRIX_GRANDE} n={g} setN={setG} />
           </div>
           <div className="rep-prix"><b id="rtot">{total}</b><span>TTC · {nb} repas{offerts > 0 && <><br /><strong>+ {offerts} offert{offerts > 1 ? 's' : ''}</strong></>}</span></div>
         </div>
@@ -68,9 +67,10 @@ export default function ReservationRepas() {
         erreur="Indiquez votre nom, votre e-mail et au moins un repas."
         titreMerci="Réservation enregistrée"
         recap={v => `Merci ${v.nom} ! ${v.repas} repas (${v.moyennes} moyenne${+v.moyennes > 1 ? 's' : ''}, ${v.grandes} grande${+v.grandes > 1 ? 's' : ''})${+v.offerts > 0 ? ` + ${v.offerts} offert${+v.offerts > 1 ? 's' : ''} (${v.offert_type.toLowerCase()})` : ''}, total ${v.total_ttc} TTC.`}
-        finMerci={PAIEMENT_EN_LIGNE ? 'Dernière étape : réglez en ligne. Votre ticket avec QR code arrive par e-mail juste après, à présenter à l’accueil.' : `Le paiement en ligne ouvre très bientôt : l’organisation vous envoie le lien par e-mail. Une question ? ${TELEPHONE}.`}
-        apresMerci={v => PAIEMENT_EN_LIGNE && v.ref ? <BoutonPaiement v={v} /> : null}
-        bouton={<>Réserver <span id="rbtn">{nb} repas · {total}</span></>}
+        finMerci={PAIEMENT_EN_LIGNE ? 'Votre réservation est enregistrée, mais le paiement ne s’est pas ouvert : réglez avec le bouton ci-dessous. Votre ticket avec QR code arrive par e-mail juste après.' : `Le paiement en ligne ouvre très bientôt : l’organisation vous envoie le lien par e-mail. Une question ? ${TELEPHONE}.`}
+        paiement={v => PAIEMENT_EN_LIGNE && v.ref ? 'repas' : null}
+        apresMerci={(v, pb) => PAIEMENT_EN_LIGNE && v.ref ? <BoutonPaiement v={v} quoi="repas" montant={v.total_ttc} probleme={pb} /> : null}
+        bouton={PAIEMENT_EN_LIGNE ? <>Payer <span id="rbtn">{total} · {nb} repas</span></> : <>Réserver <span id="rbtn">{nb} repas · {total}</span></>}
         apres={<p className="doux paie" style={{ fontSize: '12px' }}>{PAIEMENT}</p>}
       >
         <h3>Mes tickets repas</h3>

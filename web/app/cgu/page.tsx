@@ -17,11 +17,12 @@ export default function Cgu() {
 
       <h2>3. Stands exposants</h2>
       <ul>
-        <li>Le formulaire est une <b>demande</b> : il ne réserve pas le stand. L'organisation vous rappelle pour confirmer l'emplacement, puis vous envoie la facture : le stand n'est réservé qu'à réception du paiement.</li>
+        <li>Le formulaire est une <b>demande</b>, réglée en ligne : l'emplacement n'est attribué qu'après l'appel de l'organisation, qui le confirme par téléphone.</li>
         <li>Le stand choisi sur le plan est un souhait. L'organisation peut proposer un autre emplacement selon les disponibilités et l'équilibre du marché.</li>
-        <li>Les prix affichés sont hors taxes, pour les 3 jours.</li>
+        <li>Les prix affichés sont hors taxes, pour les 3 jours ; le paiement en ligne est TTC (TVA à 20 %).</li>
         <li><b>Paiement :</b> <Champ v={c.paiementStand} /></li>
         <li><b>Annulation par l'exposant :</b> <Champ v={c.annulationStand} /></li>
+        <li>L'exposant décore son stand sur le thème de Noël.</li>
         <li>L'exposant reste responsable de son matériel, de ses produits et du respect des règles d'hygiène et de sécurité qui s'appliquent à son activité.</li>
       </ul>
 
@@ -35,7 +36,7 @@ export default function Cgu() {
 
       <h2>5. Partenaires</h2>
       <ul>
-        <li>Le formulaire partenaire est une demande de contact. L'offre est validée par téléphone, puis par un devis ou une facture.</li>
+        <li>L'offre partenaire se règle en ligne au moment de la demande. L'organisation rappelle ensuite le partenaire pour préparer sa visibilité (logo, photos, vidéos) et ses repas offerts.</li>
         <li>Les prix affichés sont hors taxes. <b>Paiement :</b> <Champ v={c.paiementPartenaire} /></li>
         <li>Le partenaire fournit son logo avant le 1er décembre 2026 et garantit avoir le droit de l'utiliser.</li>
       </ul>

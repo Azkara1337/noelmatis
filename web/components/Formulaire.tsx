@@ -2,6 +2,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { ENDPOINT, TELEPHONE } from '@/lib/config';
 import { filtrerTel, nettoyer, verifier } from '@/lib/validation';
+import { lancerPaiement, type Lancement, type Quoi } from './Paiement';
 
 export type Valeurs = Record<string, string>;
 
@@ -31,19 +32,23 @@ type Props = {
   boutonClass?: string;
   /** Contenu affiché sous le message d'erreur (ex. modalités de paiement). */
   apres?: ReactNode;
-  /** Contenu ajouté sous le message de remerciement (ex. bouton de paiement), calculé à partir des valeurs envoyées. */
-  apresMerci?: (v: Valeurs) => ReactNode;
+  /** Contenu ajouté sous le message de remerciement (ex. bouton de paiement de secours), calculé à partir des valeurs envoyées. */
+  apresMerci?: (v: Valeurs, probleme?: Lancement) => ReactNode;
+  /** Paiement direct : après l'envoi, ouvre tout de suite la page Stripe pour ce type (null = pas de paiement, ex. « Je ne sais pas encore »). */
+  paiement?: (v: Valeurs) => Quoi | null;
   /** Remplace la phrase « Sans nouvelles de notre part sous 48 h… ». */
   finMerci?: string;
   children: ReactNode;
 };
 
-export default function Formulaire({ id, className, type, champs, requis, erreur, titreMerci, recap, bouton, boutonClass = 'btn plein', apres, apresMerci, finMerci, children }: Props) {
+export default function Formulaire({ id, className, type, champs, requis, erreur, titreMerci, recap, bouton, boutonClass = 'btn plein', apres, apresMerci, paiement, finMerci, children }: Props) {
   const [manque, setManque] = useState<string | null>(null);
   const [echec, setEchec] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   const [merci, setMerci] = useState<string | null>(null);
   const [envoyees, setEnvoyees] = useState<Valeurs>({});
+  const [ouverture, setOuverture] = useState(false);
+  const [probleme, setProbleme] = useState<Lancement | undefined>();
 
   // Téléphone : on empêche de taper autre chose que des chiffres, des espaces et un « + ».
   function saisie(e: FormEvent<HTMLFormElement>) {
@@ -65,6 +70,15 @@ export default function Formulaire({ id, className, type, champs, requis, erreur
     try {
       await envoyer({ type, page: location.href, ...v });
       setEnvoyees(v);
+      // Paiement direct : la demande est enregistrée, on ouvre tout de suite la page de paiement Stripe.
+      const quoi = paiement?.(v);
+      if (quoi) {
+        setOuverture(true);
+        const r = await lancerPaiement(quoi, v, v.code_promo || '');
+        if ('url' in r) { window.location.href = r.url; return; }
+        setOuverture(false);
+        setProbleme(r);
+      }
       setMerci(recap(v) + ' ' + (finMerci ?? `Sans nouvelles de notre part sous 48 h, appelez le ${TELEPHONE}.`));
     } catch {
       setEchec(true);
@@ -78,12 +92,12 @@ export default function Formulaire({ id, className, type, champs, requis, erreur
       <div className="corps" style={{ display: 'grid', gap: '12px' }} hidden={merci !== null}>
         <input className="hp" name="site_web" tabIndex={-1} autoComplete="off" aria-hidden="true" />
         {children}
-        <button className={boutonClass} type="submit" disabled={envoi}>{envoi ? 'Envoi…' : bouton}</button>
+        <button className={boutonClass} type="submit" disabled={envoi || ouverture}>{ouverture ? 'Ouverture du paiement sécurisé…' : envoi ? 'Envoi…' : bouton}</button>
         <p className="err" role="alert" hidden={!manque && !echec}>{echec ? `L’envoi n’a pas marché. Réessayez ou appelez le ${TELEPHONE}.` : manque}</p>
         {apres}
         <p className="rgpd">Vos coordonnées servent uniquement à traiter votre demande et sont supprimées au plus tard le 31 janvier 2027. <a href="/confidentialite/">Données personnelles</a> · <a href="/cgu/">Conditions générales</a></p>
       </div>
-      <div className="merci" hidden={merci === null}><h3>{titreMerci}</h3><p className="doux recap">{merci}</p>{merci !== null && apresMerci?.(envoyees)}</div>
+      <div className="merci" hidden={merci === null}><h3>{titreMerci}</h3><p className="doux recap">{merci}</p>{merci !== null && apresMerci?.(envoyees, probleme)}</div>
     </form>
   );
 }

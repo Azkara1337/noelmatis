@@ -11,7 +11,7 @@ function charger(opts = {}) {
       getValue: () => (env.lignes[r - 1] || [])[c - 1], setValue: v => { env.lignes[r - 1][c - 1] = v; },
       setValues: v => { v[0].forEach((x, i) => { env.lignes[r - 1][c - 1 + i] = x; }); return { setFontWeight: () => ({ setBackground: () => ({ setFontColor: () => {} }) }) }; } }) };
   const g = {
-    PropertiesService: { getScriptProperties: () => ({ getProperty: k => env.props[k] }) },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: k => env.props[k], setProperty: (k, v) => { env.props[k] = v; } }) },
     UrlFetchApp: { fetch: (url, o) => { env.appels.push({ url, o }); const r = env.stripe(url, o); return { getResponseCode: () => r.code, getContentText: () => JSON.stringify(r.corps) }; } },
     SpreadsheetApp: { getActiveSpreadsheet: () => ({ getSheetByName: () => feuille, getUrl: () => '' }) },
     CacheService: { getScriptCache: () => ({ get: k => env.cache[k] || null, put: (k, v) => { env.cache[k] = v; } }) },
@@ -24,6 +24,7 @@ function charger(opts = {}) {
   const f = new Function(...Object.keys(g), src + '; return { creerPaiement, verifierSession, marquer, encoder, doPost, doGet, ONGLETS, verifierPaiements };');
   return { env, ...f(...Object.values(g)) };
 }
+const sess = env => env.appels.find(a => /checkout\/sessions$/.test(a.url));
 const decode = s => Object.fromEntries(s.split('&').map(p => p.split('=').map(decodeURIComponent)));
 let ok = 0; const t = (nom, fn) => { try { fn(); ok++; console.log('  ✓', nom); } catch (e) { console.log('  ✗', nom, '→', e.message); process.exitCode = 1; } };
 
@@ -35,18 +36,18 @@ console.log('creerPaiement');
 t('2 moyennes + 1 grande : bonnes lignes et prix (en centimes)', () => {
   const { creerPaiement, env } = charger(); const r = creerPaiement({ m: '2', g: '1', email: 'a@b.fr', ref: 'R-ABCD2345', type: '' });
   assert.ok(r.ok, JSON.stringify(r)); assert.strictEqual(r.url, 'https://checkout.stripe.com/c/pay/cs_test_ABC');
-  const p = decode(env.appels[0].o.payload);
-  assert.strictEqual(env.appels[0].url, 'https://api.stripe.com/v1/checkout/sessions'); assert.strictEqual(env.appels[0].o.method, 'post');
-  assert.strictEqual(env.appels[0].o.headers.Authorization, 'Bearer sk_test_FAUX');
+  const p = decode(sess(env).o.payload);
+  assert.strictEqual(sess(env).url, 'https://api.stripe.com/v1/checkout/sessions'); assert.strictEqual(sess(env).o.method, 'post');
+  assert.strictEqual(sess(env).o.headers.Authorization, 'Bearer sk_test_FAUX');
   assert.strictEqual(p['line_items[0][price_data][unit_amount]'], '1000'); assert.strictEqual(p['line_items[0][quantity]'], '2');
   assert.strictEqual(p['line_items[1][price_data][unit_amount]'], '2000'); assert.strictEqual(p['line_items[1][quantity]'], '1');
   assert.strictEqual(p['line_items[0][price_data][currency]'], 'eur'); assert.strictEqual(p.mode, 'payment');
   assert.strictEqual(p.client_reference_id, 'R-ABCD2345'); assert.strictEqual(p.customer_email, 'a@b.fr');
-  assert.strictEqual(p.success_url, 'https://www.noel-rcimmo.fr/repas/?paiement=ok&session={CHECKOUT_SESSION_ID}');
+  assert.strictEqual(p.success_url, 'https://www.noel-rcimmo.fr/paiement/?type=repas&session={CHECKOUT_SESSION_ID}');
 });
-t('uniquement des grandes : une seule ligne', () => { const { creerPaiement, env } = charger(); creerPaiement({ m: '0', g: '3', email: 'a@b.fr', ref: 'R-ABCD2345' }); const p = decode(env.appels[0].o.payload); assert.strictEqual(p['line_items[0][price_data][unit_amount]'], '2000'); assert.ok(!('line_items[1][quantity]' in p)); });
-t('5 achetés : repas offert indiqué, pas facturé', () => { const { creerPaiement, env } = charger(); creerPaiement({ m: '5', g: '0', email: 'a@b.fr', ref: 'R-ABCD2345', type: 'Grande' }); const p = decode(env.appels[0].o.payload); assert.strictEqual(p['metadata[offerts]'], '1'); assert.match(p['line_items[0][price_data][product_data][description]'], /1 repas offert \(grande portion\)/); assert.strictEqual(p['line_items[0][quantity]'], '5'); });
-t('prix non modifiable depuis le navigateur (paramètre prix ignoré)', () => { const { creerPaiement, env } = charger(); creerPaiement({ m: '1', g: '0', email: 'a@b.fr', ref: 'R-ABCD2345', prix: '1', unit_amount: '1' }); assert.strictEqual(decode(env.appels[0].o.payload)['line_items[0][price_data][unit_amount]'], '1000'); });
+t('uniquement des grandes : une seule ligne', () => { const { creerPaiement, env } = charger(); creerPaiement({ m: '0', g: '3', email: 'a@b.fr', ref: 'R-ABCD2345' }); const p = decode(sess(env).o.payload); assert.strictEqual(p['line_items[0][price_data][unit_amount]'], '2000'); assert.ok(!('line_items[1][quantity]' in p)); });
+t('5 achetés : repas offert indiqué, pas facturé', () => { const { creerPaiement, env } = charger(); creerPaiement({ m: '5', g: '0', email: 'a@b.fr', ref: 'R-ABCD2345', type: 'Grande' }); const p = decode(sess(env).o.payload); assert.strictEqual(p['metadata[offerts]'], '1'); assert.match(p['line_items[0][price_data][product_data][description]'], /1 repas offert \(grande portion\)/); assert.strictEqual(p['line_items[0][quantity]'], '5'); });
+t('prix non modifiable depuis le navigateur (paramètre prix ignoré)', () => { const { creerPaiement, env } = charger(); creerPaiement({ m: '1', g: '0', email: 'a@b.fr', ref: 'R-ABCD2345', prix: '1', unit_amount: '1' }); assert.strictEqual(decode(sess(env).o.payload)['line_items[0][price_data][unit_amount]'], '1000'); });
 for (const [nom, p, err] of [['0 repas', { m: '0', g: '0' }, 'nombre de repas invalide'], ['quantité négative', { m: '-1', g: '2' }, 'nombre de repas invalide'], ['quantité énorme', { m: '500', g: '0' }, 'nombre de repas invalide'], ['e-mail piégé', { m: '1', email: '"><x>@a.fr' }, 'e-mail invalide'], ['référence piégée', { m: '1', ref: '<script>' }, 'référence invalide']])
   t('refus : ' + nom, () => { const { creerPaiement, env } = charger(); const r = creerPaiement(Object.assign({ email: 'a@b.fr', ref: 'R-ABCD2345' }, p)); assert.strictEqual(r.ok, false); assert.strictEqual(r.erreur, err); assert.strictEqual(env.appels.length, 0); });
 t('sans clé Stripe : erreur claire, pas de plantage', () => { const { creerPaiement } = charger({ cle: '' }); const r = creerPaiement({ m: '1', email: 'a@b.fr', ref: 'R-ABCD2345' }); assert.strictEqual(r.ok, false); assert.match(r.erreur, /clé Stripe absente/); });
