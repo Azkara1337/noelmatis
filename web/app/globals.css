@@ -801,3 +801,6 @@ form label .facultatif{font-weight:500;color:var(--doux)}
 .promo-aide a{color:var(--rouge);font-weight:700}
 /* /repas sur mobile : le formulaire juste après le choix des repas, les 3 étapes en dessous */
 @media(max-width:960px){.rep-g{display:contents}.rep-calc{order:1}.rep-offre{order:2}#frepas{order:3}.etapes{order:4}}
+/* Bandeau « 1 ticket = 1 portion » : marge intérieure, centré, compact sur mobile */
+.ticket{padding:14px 18px;justify-content:center;text-align:center;gap:10px 16px}
+@media(max-width:600px){.ticket{flex-direction:column;margin:28px 0 14px}.tk{font-size:18px;padding:7px 16px}.ticket .doux{font-size:15px}}
