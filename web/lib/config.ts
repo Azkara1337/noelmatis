@@ -49,9 +49,51 @@ export const PAIEMENT = 'Paiement en ligne sécurisé par carte bancaire. Vous r
 export const SITE_URL = 'https://www.noel-rcimmo.fr';
 
 /** Partenaires signés uniquement, avec leur vrai logo dans public/img/logos/. Les cases « Votre logo ici » se créent toutes seules. */
-export type Partenaire = { nom: string; ville?: string; logo?: string; site?: string };
+export type Partenaire = { nom: string; ville?: string; logo?: string; site?: string; /** Petite ligne sous le nom (cartes sans logo). */ activite?: string };
+/** Partenaires transmis par l'organisation (Bertrand, 20/11/2026). S'ajoutent à ceux de l'onglet « Logos » du Sheet. */
 export const PARTENAIRES: Partenaire[] = [
-  // { nom: 'Nom de l’entreprise', ville: 'Ville', logo: '/img/logos/nom.png', site: 'https://...' },
+  { nom: 'Carrefour', ville: 'Pamiers', logo: '/img/logos/carrefour.webp' },
+  { nom: 'Intermarché', ville: 'Pamiers', logo: '/img/logos/intermarche.webp' },
+  { nom: 'Brico Dépôt', ville: 'Pamiers', logo: '/img/logos/bricodepot.webp' },
+  { nom: 'Mr.Bricolage', ville: 'Pamiers', logo: '/img/logos/mrbricolage.webp' },
+  { nom: 'Gedimat Ariège Matériaux', ville: 'Pamiers' },
+  { nom: 'Point.P', ville: 'Pamiers', logo: '/img/logos/pointp.webp' },
+  { nom: 'EDF', ville: 'Ariège', logo: '/img/logos/edf.webp' },
+  { nom: 'Engie', ville: 'Ariège', logo: '/img/logos/engie.webp' },
+  { nom: 'AXA Assurances', ville: 'Pamiers', logo: '/img/logos/axa.webp' },
+  { nom: 'Crédit Agricole Sud Méditerranée', ville: 'Pamiers', logo: '/img/logos/creditagricole.webp' },
+  { nom: 'Banque Populaire Occitane', ville: 'Pamiers', logo: '/img/logos/banquepopulaire.webp' },
+  { nom: 'Groupama', ville: 'Pamiers', logo: '/img/logos/groupama.webp' },
+  { nom: 'E.Leclerc', ville: 'Saint-Jean-du-Falga', logo: '/img/logos/leclerc.webp' },
+  { nom: 'Optic 2000', ville: 'Pamiers' },
+  { nom: 'Unikalo Peintures', ville: 'Pamiers' },
+  { nom: 'Chausson Matériaux', ville: 'Pamiers', logo: '/img/logos/chausson.webp' },
+  { nom: 'BigMat Ariège', ville: 'Pamiers' },
+  { nom: 'Maison Thiriet', ville: 'Pamiers', logo: '/img/logos/thiriet.webp' },
+  { nom: 'Citroën', ville: 'Pamiers', logo: '/img/logos/citroen.webp' },
+  { nom: 'Peugeot', ville: 'Pamiers', logo: '/img/logos/peugeot.webp' },
+  { nom: 'Renault', ville: 'Pamiers', logo: '/img/logos/renault.webp' },
+  { nom: 'Garage Ariège Auto', ville: 'Pamiers', activite: 'Entretien & réparation' },
+  { nom: 'Norauto', ville: 'Pamiers', logo: '/img/logos/norauto.webp' },
+  { nom: 'Feu Vert', ville: 'Pamiers', logo: '/img/logos/feuvert.webp' },
+  { nom: 'Intersport', ville: 'Pamiers', logo: '/img/logos/intersport.webp' },
+  { nom: 'Decathlon', ville: 'Foix', logo: '/img/logos/decathlon.webp' },
+  { nom: 'Sport 2000', ville: 'Pamiers', logo: '/img/logos/sport2000.webp' },
+  { nom: 'L’Atelier du Cycle', ville: 'Pamiers', activite: 'Vélos · entretien · accessoires' },
+  { nom: 'Ariège Équipements', ville: 'Pamiers', activite: 'Matériel BTP & TP' },
+  { nom: 'Kiloutou', ville: 'Pamiers', logo: '/img/logos/kiloutou.webp' },
+  { nom: 'La Cave de l’Ariège', ville: 'Pamiers', activite: 'Vins & produits du terroir' },
+  { nom: 'Boucherie du Centre', ville: 'Pamiers' },
+  { nom: 'Fromagerie Ariégeoise', ville: 'Pamiers', activite: 'Produits locaux' },
+  { nom: 'Boulangerie Pâtisserie La Panière', ville: 'Pamiers' },
+  { nom: 'Maison Dupont', ville: 'Pamiers', activite: 'Charcuterie artisanale' },
+  { nom: 'Le Terroir d’Ariège', ville: 'Pamiers', activite: 'Producteurs locaux' },
+  { nom: 'Ariège Boissons Distribution', ville: 'Pamiers' },
+  { nom: 'Blanc Froid', ville: 'Pamiers', activite: 'Climatisation · chauffage' },
+  { nom: 'Ariège Élec', ville: 'Pamiers', activite: 'Électricité générale' },
+  { nom: 'Plomberie 09', ville: 'Pamiers', activite: 'Chauffage · sanitaire' },
+  { nom: 'TP Ariège', ville: 'Pamiers', activite: 'Terrassement · VRD' },
+  { nom: 'Espace Vert 09', ville: 'Pamiers', activite: 'Création & entretien' },
 ];
 
 /** Invités : n = nombre d'abonnés (chiffres de l'organisation, 17/11/2026), url = lien du compte. Un réseau sans n ne s'affiche pas. */

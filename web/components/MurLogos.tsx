@@ -6,7 +6,7 @@ import { ENDPOINT, PARTENAIRES, type Partenaire } from '@/lib/config';
 
 /**
  * Mur des partenaires : la liste vient de l'onglet « Logos » du Google Sheet (?action=partenaires).
- * Si le Sheet ne répond pas, on garde PARTENAIRES de config.ts comme secours.
+ * Liste de base : PARTENAIRES de config.ts, complétée par l'onglet « Logos » du Sheet.
  */
 export default function MurLogos() {
   const [liste, setListe] = useState<Partenaire[]>(PARTENAIRES);
@@ -15,7 +15,12 @@ export default function MurLogos() {
     if (!ENDPOINT) return;
     fetch(ENDPOINT + '?action=partenaires')
       .then(r => r.json())
-      .then(d => { if (d && Array.isArray(d.partenaires)) setListe(d.partenaires); })
+      .then(d => {
+        if (!d || !Array.isArray(d.partenaires)) return;
+        // Ceux du Sheet s'ajoutent à la liste de config.ts (sans doublon de nom).
+        const noms = new Set(PARTENAIRES.map(p => p.nom.toLowerCase()));
+        setListe([...PARTENAIRES, ...d.partenaires.filter((p: Partenaire) => !noms.has(p.nom.toLowerCase()))]);
+      })
       .catch(() => {});
   }, []);
 
@@ -26,7 +31,7 @@ export default function MurLogos() {
     <>
       <div className="logos-g" id="logos">
         {liste.map(p => {
-          const contenu = <>{p.logo ? <img src={p.logo} alt={p.nom} loading="lazy" /> : <b>{p.nom}</b>}{p.ville && <small>{p.ville}</small>}</>;
+          const contenu = <>{p.logo ? <img src={p.logo} alt={p.nom} loading="lazy" /> : <><b>{p.nom}</b>{p.activite && <i>{p.activite}</i>}</>}{p.ville && <small>{p.ville}</small>}</>;
           return p.site
             ? <a key={p.nom} className="lg-c" href={p.site} target="_blank" rel="noopener">{contenu}</a>
             : <div key={p.nom} className="lg-c">{contenu}</div>;

@@ -757,3 +757,7 @@ form label .facultatif{font-weight:500;color:var(--doux)}
 .acc-res.rouge{background:#b3261e}
 .acc-res.orange{background:#c56a00}
 .acc-res .btn{width:100%}
+/* Mur : cartes sans logo (nom en lettrage) */
+.lg-c:not(.vide) b{color:var(--rouge);font-size:clamp(14px,1.5vw,18px);line-height:1.08}
+.lg-c i{font:600 11.5px/1.15 var(--fc);font-style:normal;color:var(--encre);opacity:.8}
+.lg-c{gap:4px}
