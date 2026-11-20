@@ -22,7 +22,7 @@ function Compteur({ id, titre, desc, prix, n, setN }: { id: string; titre: strin
 }
 
 export default function ReservationRepas() {
-  const [m, setM] = useState(2);
+  const [m, setM] = useState(1);
   const [g, setG] = useState(0);
   const [type, setType] = useState('Moyenne');
   // Référence de la réservation : relie la ligne du Sheet au paiement Stripe.
