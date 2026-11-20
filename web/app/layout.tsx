@@ -14,8 +14,8 @@ export const metadata: Metadata = {
   applicationName: NOM_SITE,
   formatDetection: { telephone: false },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 } },
-  openGraph: { type: 'website', locale: 'fr_FR', siteName: NOM_SITE, images: [{ url: '/img/poster.jpg', width: 1200, height: 700 }] },
-  twitter: { card: 'summary_large_image', images: ['/img/poster.jpg'] },
+  openGraph: { type: 'website', locale: 'fr_FR', siteName: NOM_SITE, images: [{ url: '/img/og.jpg', width: 1200, height: 630 }] },
+  twitter: { card: 'summary_large_image', images: ['/img/og.jpg'] },
   icons: {
     icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23d63f2b'/%3E%3Cpath d='M32 10l5 15h16l-13 9 5 16-13-10-13 10 5-16-13-9h16z' fill='%23fff'/%3E%3C/svg%3E",
   },

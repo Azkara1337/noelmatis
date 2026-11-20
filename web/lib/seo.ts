@@ -3,7 +3,7 @@ import { ADRESSE, SITE_URL } from '@/lib/config';
 
 /** Nom du site, repris dans les titres et les aperçus de partage. */
 export const NOM_SITE = 'Marché de Noël de Pamiers';
-const IMAGE = { url: '/img/poster.jpg', width: 1200, height: 700, alt: 'Marché de Noël des Artisans & Commerçants à Pamiers, du 18 au 20 décembre 2026' };
+const IMAGE = { url: '/img/og.jpg', width: 1200, height: 630, alt: 'Marché de Noël des Artisans & Commerçants à Pamiers, du 18 au 20 décembre 2026' };
 
 /** Métadonnées d'une page : titre, description, adresse canonique et aperçu de partage (Facebook, WhatsApp, X…). */
 export function pageMeta(chemin: string, titre: string, description: string, titreAbsolu = false): Metadata {
@@ -37,7 +37,7 @@ export const EVENEMENT_JSONLD = {
     name: 'Marché de Noël de Pamiers',
     address: { '@type': 'PostalAddress', streetAddress: ADRESSE.split(',')[0].trim(), postalCode: '09100', addressLocality: 'Pamiers', addressRegion: 'Ariège', addressCountry: 'FR' },
   },
-  image: [`${SITE_URL}/img/poster.jpg`],
+  image: [`${SITE_URL}/img/og.jpg`],
   url: `${SITE_URL}/`,
   inLanguage: 'fr',
 };
