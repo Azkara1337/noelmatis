@@ -796,3 +796,6 @@ form label .facultatif{font-weight:500;color:var(--doux)}
 @media(prefers-reduced-motion:reduce){.p404-n span,.paie-carte.verif .paie-ic{animation:none}}
 .acc-scan{display:grid;gap:14px}
 .acc-scan[hidden]{display:none}
+
+.promo-aide{display:block;font-size:13px;line-height:1.35;color:var(--doux);margin-top:2px}
+.promo-aide a{color:var(--rouge);font-weight:700}

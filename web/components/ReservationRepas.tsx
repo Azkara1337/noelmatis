@@ -77,7 +77,7 @@ export default function ReservationRepas() {
         <label>Téléphone<input id="re-tel" name="tel" type="tel" inputMode="tel" autoComplete="tel" maxLength={20} placeholder="06 12 34 56 78" /></label>
         <label>Je réserve en tant que<select id="re-type" name="profil"><option>Particulier</option><option>Entreprise (facture)</option></select></label>
         {offerts > 0 && <label>{offerts > 1 ? 'Mes repas offerts' : 'Mon repas offert'}<select name="offert_type" value={type} onChange={e => setType(e.target.value)}><option value="Moyenne">Moyenne portion</option><option value="Grande">Grande portion</option></select></label>}
-        <label><span>Code promo <small className="facultatif">(facultatif)</small></span><input name="code_promo" autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={30} placeholder="Ex. NOEL2026" /></label>
+        <label><span>Code promo <small className="facultatif">(facultatif)</small></span><input name="code_promo" autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={30} placeholder="Ex. NOEL2026" /><small className="promo-aide">Codes promo disponibles auprès de <a href="/invites/" target="_blank" rel="noopener">nos créateurs invités</a> : suivez-les sur leurs réseaux !</small></label>
         <input type="hidden" name="ref" value={ref} />
         <input type="hidden" name="repas" value={nb > 0 ? String(nb) : ''} />
         <input type="hidden" name="moyennes" value={String(m)} />
