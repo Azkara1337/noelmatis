@@ -12,6 +12,9 @@
  *      Qui a accès : Tout le monde
  *    Copie l'URL qui finit par /exec et colle-la dans web/lib/config.ts : export const ENDPOINT = '...';
  *
+ * Paiements (Stripe), factures et tickets : menu « Marché de Noël » du Google Sheet > Configurer les paiements.
+ * (Si le menu n'apparaît pas : recharge la page du Sheet.)
+ *
  * Au quotidien :
  * - Chaque demande arrive dans son onglet, et un e-mail part vers NOTIFIER.
  * - La personne qui a rempli le formulaire reçoit un e-mail de confirmation.
@@ -522,6 +525,74 @@ function mailsPaiement(ref, montant, test, fac) {
   if (libre) noterFacture(l, fac);
 }
 
+
+// ===================== Menu « Marché de Noël » dans le Google Sheet =====================
+// Configurer : clé Stripe, code accueil, mentions des factures, déclencheur horaire. Tout se fait par des fenêtres,
+// sans ouvrir Apps Script. Les secrets vont dans les propriétés du script, jamais dans ce fichier.
+
+function onOpen() {
+  SpreadsheetApp.getUi().createMenu('Marché de Noël')
+    .addItem('Configurer les paiements', 'configurer')
+    .addItem('Vérifier la configuration', 'etatConfiguration')
+    .addItem('Reprendre les paiements maintenant', 'verifierPaiements')
+    .addToUi();
+}
+
+/** Demande une valeur ; renvoie null si on annule, l'ancienne valeur si on laisse vide. */
+function demander(ui, titre, texte, ancienne) {
+  const r = ui.prompt(titre, texte + (ancienne ? '\n\nLaisser vide pour garder la valeur actuelle.' : ''), ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return null;
+  const v = r.getResponseText().trim();
+  return v || ancienne || '';
+}
+
+function configurer() {
+  const ui = SpreadsheetApp.getUi(), props = PropertiesService.getScriptProperties();
+  // 1. Clé Stripe, vérifiée auprès de Stripe avant d'être enregistrée
+  const cle = demander(ui, '1/3 · Clé secrète Stripe', 'Colle la clé secrète Stripe : sk_test_… pour les tests, sk_live_… pour le réel (Stripe > Développeurs > Clés API).', props.getProperty('STRIPE_SECRET'));
+  if (cle === null) return;
+  if (!/^(sk|rk)_(test|live)_[A-Za-z0-9]+$/.test(cle)) { ui.alert('Ce n\'est pas une clé secrète Stripe (elle commence par sk_test_ ou sk_live_). Rien n\'a été changé.'); return; }
+  const r = UrlFetchApp.fetch('https://api.stripe.com/v1/account', {headers: {Authorization: 'Bearer ' + cle}, muteHttpExceptions: true});
+  const compte = JSON.parse(r.getContentText());
+  if (r.getResponseCode() !== 200) { ui.alert('Stripe refuse cette clé : ' + ((compte.error && compte.error.message) || r.getResponseCode()) + '\nRien n\'a été changé.'); return; }
+  props.setProperty('STRIPE_SECRET', cle);
+  // 2. Code accueil (6 chiffres tirés au hasard si rien n'existe)
+  let code = props.getProperty('ACCUEIL_CODE');
+  if (!code) code = String(100000 + Math.floor(Math.random() * 900000));
+  const c = demander(ui, '2/3 · Code accueil', 'Code à taper sur la page /accueil du site pour scanner les tickets. Code actuel : ' + code, code);
+  if (c === null) return;
+  props.setProperty('ACCUEIL_CODE', c);
+  // 3. Mentions des factures
+  const m = demander(ui, '3/3 · Mentions des factures', 'Capital social et n° de TVA de RC IMMO, ex. : Capital 1 200 € · TVA FR12345678901', props.getProperty('FACTURE_MENTIONS'));
+  if (m === null) return;
+  if (m) props.setProperty('FACTURE_MENTIONS', m.slice(0, 300));
+  // Déclencheur toutes les 15 minutes (un seul), onglets et colonnes à jour
+  ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'verifierPaiements') ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger('verifierPaiements').timeBased().everyMinutes(15).create();
+  installer();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  Object.keys(ONGLETS).forEach(function (k) { const sh = ss.getSheetByName(ONGLETS[k].nom); if (sh) entetes(sh, ONGLETS[k]); });
+  ui.alert('C\'est prêt ✓\n\n' + resumeConfiguration(compte, cle));
+}
+
+function resumeConfiguration(compte, cle) {
+  const props = PropertiesService.getScriptProperties();
+  const live = /_live_/.test(cle);
+  return 'Stripe : ' + (live ? 'MODE RÉEL (vrais paiements)' : 'mode TEST (carte 4242…, pas de vrai argent)') + '\n'
+    + 'Compte : ' + ((compte.settings && compte.settings.dashboard && compte.settings.dashboard.display_name) || compte.id) + (compte.charges_enabled ? ' · paiements activés' : ' · PAIEMENTS NON ACTIVÉS (finir le dossier Stripe)') + '\n'
+    + 'Code accueil : ' + (props.getProperty('ACCUEIL_CODE') || 'aucun') + '\n'
+    + 'Mentions des factures : ' + (props.getProperty('FACTURE_MENTIONS') || 'MANQUANTES (capital et n° de TVA)') + '\n'
+    + 'Vérification des paiements : toutes les 15 minutes\n'
+    + 'E-mails restants aujourd\'hui : ' + MailApp.getRemainingDailyQuota();
+}
+
+function etatConfiguration() {
+  const ui = SpreadsheetApp.getUi(), cle = cleStripe();
+  if (!cle) { ui.alert('Aucune clé Stripe. Menu Marché de Noël > Configurer les paiements.'); return; }
+  const r = UrlFetchApp.fetch('https://api.stripe.com/v1/account', {headers: {Authorization: 'Bearer ' + cle}, muteHttpExceptions: true});
+  const declencheur = ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'verifierPaiements'; });
+  ui.alert((r.getResponseCode() === 200 ? '' : 'ATTENTION : Stripe refuse la clé enregistrée.\n\n') + resumeConfiguration(JSON.parse(r.getContentText()), cle).replace('toutes les 15 minutes', declencheur ? 'toutes les 15 minutes' : 'NON INSTALLÉE'));
+}
 
 // ===================== Ticket repas (PDF + QR code) et contrôle à l'accueil =====================
 // Après le paiement, le client reçoit UNE fois un PDF avec un QR code signé (impossible à fabriquer sans la clé
