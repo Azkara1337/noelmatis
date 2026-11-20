@@ -8,7 +8,8 @@ import { ENDPOINT } from '@/lib/config';
 type Etat = 'ok' | 'remis' | 'deja' | 'nonpaye' | 'inconnu' | 'faux';
 type Reponse = { ok: boolean; erreur?: string; etat?: Etat; ref?: string; nom?: string; moyennes?: number; grandes?: number; offerts?: number; type_offert?: string; retrait?: string };
 
-const CODE_RE = /^R-[A-Z0-9]{8}-[0-9A-F]{12}$/;
+// R- : ticket repas · P- : bon repas d'un partenaire
+const CODE_RE = /^[RP]-[A-Z0-9]{8}-[0-9A-F]{12}$/;
 const CLE_PIN = 'accueil-code';
 
 async function appeler(action: 'controle' | 'retirer', code: string, pin: string): Promise<Reponse> {
@@ -39,6 +40,8 @@ export default function ScannerAccueil() {
   const video = useRef<HTMLVideoElement>(null);
   const flux = useRef<MediaStream | null>(null);
   const pause = useRef(false);
+  // Dernier QR lu : on l'ignore quelques secondes après « Scanner le suivant » (il est souvent encore devant la caméra).
+  const dernier = useRef({ code: '', jusqua: 0 });
 
   // Code accueil gardé le temps de l'onglet seulement.
   useEffect(() => { try { const p = sessionStorage.getItem(CLE_PIN); if (p) { setPin(p); setConnecte(true); } } catch {} }, []);
@@ -76,7 +79,7 @@ export default function ScannerAccueil() {
     } catch { setErreur('Pas de connexion : rien n’a été noté, réessayez.'); } finally { setAttente(false); }
   }
 
-  function suivant() { setRes(null); setCode(''); setErreur(''); pause.current = false; video.current?.play().catch(() => {}); }
+  function suivant() { dernier.current.jusqua = Date.now() + 4000; setRes(null); setCode(''); setErreur(''); pause.current = false; video.current?.play().catch(() => {}); }
   function deconnexion() { try { sessionStorage.removeItem(CLE_PIN); } catch {} setConnecte(false); setPin(''); arreter(); }
 
   function arreter() { flux.current?.getTracks().forEach(t => t.stop()); flux.current = null; setCamera('off'); }
@@ -101,7 +104,8 @@ export default function ScannerAccueil() {
         const l = Math.min(640, v.videoWidth), h = Math.round(v.videoHeight * l / v.videoWidth);
         toile.width = l; toile.height = h; ctx.drawImage(v, 0, 0, l, h);
         const r = lire(ctx.getImageData(0, 0, l, h).data, l, h, { inversionAttempts: 'dontInvert' });
-        if (r?.data) { pause.current = true; controler(r.data); }
+        const lu = r?.data?.trim().toUpperCase();
+        if (lu && !(lu === dernier.current.code && Date.now() < dernier.current.jusqua)) { dernier.current.code = lu; pause.current = true; controler(lu); }
       }
       setTimeout(tour, 250);
     };
@@ -140,7 +144,7 @@ export default function ScannerAccueil() {
             {attente && <div className="acc-attente">Vérification…</div>}
           </div>
           <form className="acc-manuel" onSubmit={e => { e.preventDefault(); controler(code); }}>
-            <label>Ou tapez le code sous le QR<input value={code} onChange={e => setCode(e.target.value)} placeholder="R-XXXXXXXX-XXXXXXXXXXXX" autoCapitalize="characters" autoComplete="off" spellCheck={false} maxLength={40} /></label>
+            <label>Ou tapez le code sous le QR<input value={code} onChange={e => setCode(e.target.value)} placeholder="R-XXXXXXXX-XXXXXXXXXXXX ou P-…" autoCapitalize="characters" autoComplete="off" spellCheck={false} maxLength={40} /></label>
             <button className="btn" disabled={attente || !code.trim()}>Vérifier</button>
           </form>
         </>
