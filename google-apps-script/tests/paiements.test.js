@@ -1,6 +1,19 @@
 // Tests du paiement en ligne des stands et des offres partenaires (faux Stripe, faux Sheet à plusieurs onglets).
 const fs = require('fs'), assert = require('assert'), crypto = require('crypto');
 const src = fs.readFileSync(require('path').join(__dirname, '..', 'Code.gs'), 'utf8');
+
+/** Ligne du Sheet (onglet selon la lettre) qui porte cette référence, dans le test en cours. */
+function ligneDe(ref) {
+  const { env, ONGLETS } = global.COURANT, o = ONGLETS[{ R: 'repas', S: 'stand', P: 'partenaire' }[ref.charAt(0)]];
+  const L = env.onglets[o.nom] || [], cles = o.cols.map(c => c[0]);
+  const l = L.slice(1).reverse().find(x => x[cles.indexOf('ref')] === ref);
+  return l && Object.fromEntries(cles.map((k, i) => [k, l[i]]));
+}
+/** Métadonnées que Stripe renverrait pour cette référence (celles que creerPaiement a envoyées). */
+function metaPour(ref) {
+  const d = ligneDe(ref) || {}, quoi = { R: 'repas', S: 'stand', P: 'partenaire' }[ref.charAt(0)];
+  return { ref, type: quoi, moyennes: d.moyennes, grandes: d.grandes, categorie: d.categorie, offre: d.offre };
+}
 function charger(stripeRep, props = {}) {
   const env = { onglets: {}, appels: [], mails: [], props: Object.assign({ STRIPE_SECRET: 'sk_test_FAUX' }, props), cache: {} };
   const feuille = nom => { const L = env.onglets[nom] = env.onglets[nom] || []; return {
@@ -22,6 +35,19 @@ function charger(stripeRep, props = {}) {
   };
   const o = new Function(...Object.keys(g), src + '; return { ONGLETS, doPost, doGet, creerPaiement, verifierSession, codeTicket };')(...Object.values(g));
   for (const k of ['stand', 'repas', 'partenaire']) feuille(o.ONGLETS[k].nom).appendRow(o.ONGLETS[k].cols.map(c => c[1]));
+  global.COURANT = { env, ONGLETS: o.ONGLETS };
+  // Le script calcule le prix à partir de la demande enregistrée : on l'enregistre d'abord si le test ne l'a pas fait.
+  const creer = o.creerPaiement;
+  o.creerPaiement = p => {
+    const quoi = p.quoi || 'repas', ref = String(p.ref || '');
+    if (/^[RSP]-/.test(ref) && !ligneDe(ref)) {
+      const d = quoi === 'stand' ? { type: 'stand', nom: 'Jean Expo', tel: '0612345678', email: p.email, categorie: p.cat, stand: p.stand || '', ref }
+        : quoi === 'partenaire' ? { type: 'partenaire', entreprise: 'Entreprise Test', nom: 'Marie', tel: '0612345678', email: p.email, offre: p.offre, ref }
+        : { type: 'repas', nom: 'Jean', email: p.email, moyennes: String(p.m || '0'), grandes: String(p.g || '0'), offert_type: p.type, ref };
+      o.doPost({ postData: { contents: JSON.stringify(d) } });
+    }
+    return creer(p);
+  };
   const col = (k, c) => o.ONGLETS[k].cols.map(x => x[0]).indexOf(c);
   return { env, ...o, col, ligne: k => env.onglets[o.ONGLETS[k].nom][1] };
 }
@@ -35,19 +61,23 @@ const parten = { type: 'partenaire', entreprise: 'Boulangerie Test', nom: 'Marie
 console.log('Stands');
 t('demande de stand : référence et « Non payé » dans l\'onglet Stands', () => { const c = charger(); post(c, stand); assert.strictEqual(c.ligne('stand')[c.col('stand', 'ref')], 'S-ABCD2345'); assert.strictEqual(c.ligne('stand')[c.col('stand', 'paiement')], 'Non payé'); });
 t('référence d\'un autre type (R- sur un stand) : vidée', () => { const c = charger(); post(c, Object.assign({}, stand, { ref: 'R-ABCD2345' })); assert.strictEqual(c.ligne('stand')[c.col('stand', 'ref')], ''); });
-t('Producteur 180 € HT + TVA 20 %, facture Stripe, adresse demandée, retour sur /stand', () => { const c = charger(); const r = c.creerPaiement({ quoi: 'stand', cat: 'Producteur, terroir', stand: '12', email: 'e@x.fr', ref: 'S-ABCD2345' }); assert.ok(r.ok, JSON.stringify(r)); const p = decode(sess(c.env).o.payload);
+t('Producteur 180 € HT + TVA 20 %, facture Stripe, adresse demandée, retour sur /stand', () => { const c = charger(); post(c, stand); const r = c.creerPaiement({ quoi: 'stand', email: 'e@x.fr', ref: 'S-ABCD2345' }); assert.ok(r.ok, JSON.stringify(r)); const p = decode(sess(c.env).o.payload);
   assert.strictEqual(p['line_items[0][price_data][unit_amount]'], '18000'); assert.ok(p['line_items[0][tax_rates][0]']); assert.strictEqual(p['invoice_creation[enabled]'], 'true'); assert.strictEqual(p.billing_address_collection, 'required'); assert.strictEqual(p['line_items[0][quantity]'], '1'); assert.match(p['line_items[0][price_data][product_data][description]'], /Stand n° 12 souhaité/); assert.strictEqual(p.success_url, 'https://www.noel-rcimmo.fr/paiement/?type=stand&session={CHECKOUT_SESSION_ID}'); assert.strictEqual(p['payment_method_types[0]'], 'card'); });
-for (const [cat, ttc] of [['Artisanat, créations', '12000'], ['Snacking, gourmandises', '28000'], ['Restauration, spécialités', '42000'], ['Stand Premium, brasero', '59000']]) t(cat + ' : ' + (+ttc / 100) + ' € HT + TVA', () => { const c = charger(); c.creerPaiement({ quoi: 'stand', cat, email: 'e@x.fr', ref: 'S-ABCD2345' }); assert.strictEqual(decode(sess(c.env).o.payload)['line_items[0][price_data][unit_amount]'], ttc); });
+for (const [cat, ttc] of [['Artisanat, créations', '12000'], ['Snacking, gourmandises', '28000'], ['Restauration, spécialités', '42000'], ['Stand Premium, brasero', '59000']]) t(cat + ' : ' + (+ttc / 100) + ' € HT + TVA', () => { const c = charger(); post(c, Object.assign({}, stand, { categorie: cat })); c.creerPaiement({ quoi: 'stand', email: 'e@x.fr', ref: 'S-ABCD2345' }); assert.strictEqual(decode(sess(c.env).o.payload)['line_items[0][price_data][unit_amount]'], ttc); });
 for (const [nom, p, err] of [['catégorie inventée', { cat: 'Gratuit' }, 'catégorie de stand invalide'], ['« Je ne sais pas encore »', { cat: 'Je ne sais pas encore' }, 'catégorie de stand invalide'], ['stand 99', { stand: '99' }, 'numéro de stand invalide'], ['référence repas', { ref: 'R-ABCD2345' }, 'référence invalide'], ['prix envoyé par le navigateur ignoré', { prix: '1' }, null]])
-  t('stand : ' + nom, () => { const c = charger(); const r = c.creerPaiement(Object.assign({ quoi: 'stand', cat: 'Artisanat, créations', email: 'e@x.fr', ref: 'S-ABCD2345' }, p)); if (err) { assert.strictEqual(r.erreur, err); assert.strictEqual(c.env.appels.length, 0); } else assert.strictEqual(decode(sess(c.env).o.payload)['line_items[0][price_data][unit_amount]'], '12000'); });
+  t('stand : ' + nom, () => { const c = charger(); post(c, Object.assign({}, stand, { categorie: p.cat || 'Artisanat, créations', stand: p.stand || '12' })); const r = c.creerPaiement(Object.assign({ quoi: 'stand', cat: 'Artisanat, créations', email: 'e@x.fr', ref: 'S-ABCD2345' }, p)); if (err) { assert.strictEqual(r.erreur, err); assert.strictEqual(c.env.appels.length, 0); } else assert.strictEqual(decode(sess(c.env).o.payload)['line_items[0][price_data][unit_amount]'], '12000'); });
 
 console.log('Partenaires');
-t('Sapin Gourmand 400 € HT + TVA, retour sur /partenaire', () => { const c = charger(); const r = c.creerPaiement({ quoi: 'partenaire', offre: 'Sapin Gourmand', email: 'p@x.fr', ref: 'P-ABCD2345' }); assert.ok(r.ok); const p = decode(sess(c.env).o.payload); assert.strictEqual(p['line_items[0][price_data][unit_amount]'], '40000'); assert.strictEqual(p.cancel_url, 'https://www.noel-rcimmo.fr/paiement/?type=partenaire&annule=1'); });
-t('Partenaire Prestige 2 500 € HT + TVA', () => { const c = charger(); c.creerPaiement({ quoi: 'partenaire', offre: 'Partenaire Prestige', email: 'p@x.fr', ref: 'P-ABCD2345' }); assert.strictEqual(decode(sess(c.env).o.payload)['line_items[0][price_data][unit_amount]'], '250000'); });
-t('offre inventée refusée', () => { const c = charger(); assert.strictEqual(c.creerPaiement({ quoi: 'partenaire', offre: 'Gratuite', email: 'p@x.fr', ref: 'P-ABCD2345' }).erreur, 'offre invalide'); });
+t('Sapin Gourmand 400 € HT + TVA, retour sur /partenaire', () => { const c = charger(); post(c, parten); const r = c.creerPaiement({ quoi: 'partenaire', email: 'p@x.fr', ref: 'P-ABCD2345' }); assert.ok(r.ok); const p = decode(sess(c.env).o.payload); assert.strictEqual(p['line_items[0][price_data][unit_amount]'], '40000'); assert.strictEqual(p.cancel_url, 'https://www.noel-rcimmo.fr/paiement/?type=partenaire&annule=1'); });
+t('Partenaire Prestige 2 500 € HT + TVA', () => { const c = charger(); post(c, Object.assign({}, parten, { offre: 'Partenaire Prestige' })); c.creerPaiement({ quoi: 'partenaire', email: 'p@x.fr', ref: 'P-ABCD2345' }); assert.strictEqual(decode(sess(c.env).o.payload)['line_items[0][price_data][unit_amount]'], '250000'); });
+t('offre inventée refusée', () => { const c = charger(); post(c, Object.assign({}, parten, { offre: 'Gratuite' })); assert.strictEqual(c.creerPaiement({ quoi: 'partenaire', offre: 'Sapin Gourmand', email: 'p@x.fr', ref: 'P-ABCD2345' }).erreur, 'offre invalide'); });
+t('offre de l\'adresse ignorée : on paie l\'offre du Sheet', () => { const c = charger(); post(c, Object.assign({}, parten, { offre: 'Partenaire Prestige' })); c.creerPaiement({ quoi: 'partenaire', offre: 'Étoile de Noël', email: 'p@x.fr', ref: 'P-ABCD2345' }); assert.strictEqual(decode(sess(c.env).o.payload)['line_items[0][price_data][unit_amount]'], '250000'); });
 
 console.log('Après le paiement');
-const paye = (ref, total) => () => ({ code: 200, corps: { payment_status: 'paid', amount_total: total, client_reference_id: ref, created: 1795000000, livemode: false } });
+// Métadonnées écrites par creerPaiement, conformes aux demandes de test (stand, parten, repas 2 + 1)
+const META = { S: { type: 'stand', categorie: 'Producteur, terroir' }, P: { type: 'partenaire', offre: 'Sapin Gourmand' }, R: { type: 'repas', moyennes: '2', grandes: '1' } };
+const meta = (ref, plus) => Object.assign({ ref }, META[ref.charAt(0)], plus);
+const paye = (ref, total, plus) => () => ({ code: 200, corps: { payment_status: 'paid', amount_total: total, client_reference_id: ref, created: 1795000000, livemode: false, metadata: meta(ref, plus) } });
 t('stand payé : « Payé 216 € (TEST) », e-mail à l\'organisation + au client, une seule fois', () => {
   const c = charger(paye('S-ABCD2345', 21600)); post(c, stand); c.env.mails.length = 0;
   c.verifierSession('cs_test_A'); assert.match(c.ligne('stand')[c.col('stand', 'paiement')], /^Payé 216 € .*\(TEST\)$/);
@@ -59,10 +89,10 @@ t('repas payé : ticket + e-mail à l\'organisation, pas de doublon', () => { co
 t('paiement d\'une référence inconnue : aucun e-mail', () => { const c = charger(paye('S-ZZZZ9999', 14400)); c.verifierSession('cs_test_A'); assert.strictEqual(c.env.mails.length, 0); });
 
 console.log('Factures');
-const avecFacture = (ref, total, prete = () => true) => (url) => {
+const avecFacture = (ref, total, prete = () => true, plus) => (url) => {
   if (/\/invoices\/in_1$/.test(url)) return prete() ? { code: 200, corps: { number: 'RC-0001', invoice_pdf: 'https://pay.stripe.com/invoice/x/pdf', hosted_invoice_url: 'https://invoice.stripe.com/i/x' } } : { code: 200, corps: { number: 'RC-0001', invoice_pdf: null } };
   if (/pay\.stripe\.com/.test(url)) return { code: 200, corps: {} };
-  return { code: 200, corps: { payment_status: 'paid', amount_total: total, client_reference_id: ref, created: 1795000000, livemode: false, invoice: 'in_1' } };
+  return { code: 200, corps: { payment_status: 'paid', amount_total: total, client_reference_id: ref, created: 1795000000, livemode: false, invoice: 'in_1', metadata: meta(ref, plus) } };
 };
 t('stand payé : facture PDF jointe à la confirmation, notée dans le Sheet, envoyée une seule fois', () => {
   const c = charger(avecFacture('S-ABCD2345', 21600)); post(c, stand); c.env.mails.length = 0;
@@ -81,7 +111,8 @@ t('facture prête plus tard : envoyée seule au passage suivant, une fois', () =
   prete = true; c.verifierSession('cs_test_A'); c.verifierSession('cs_test_A');
   const f = c.env.mails.filter(m => /votre facture n° RC-0001/.test(m.subject)); assert.strictEqual(f.length, 1); assert.strictEqual(f[0].attachments[0].nom, 'Facture-RC-0001.pdf'); });
 t('réservation de repas : pas d\'e-mail avant le paiement (quota Gmail)', () => { const c = charger(); post(c, { type: 'repas', nom: 'Jean', email: 'r@x.fr', moyennes: '1', ref: 'R-ABCD2345' }); assert.strictEqual(c.env.mails.length, 0); });
-t('taux de TVA créé une seule fois (20 % hors taxes, 10 % incluse pour les repas)', () => { const c = charger(); c.creerPaiement({ quoi: 'stand', cat: 'Artisanat, créations', email: 'e@x.fr', ref: 'S-ABCD2345' }); c.creerPaiement({ quoi: 'stand', cat: 'Artisanat, créations', email: 'e@x.fr', ref: 'S-ABCD2346' }); c.creerPaiement({ quoi: 'repas', m: '1', email: 'e@x.fr', ref: 'R-ABCD2345' });
+t('taux de TVA créé une seule fois (20 % hors taxes, 10 % incluse pour les repas)', () => { const c = charger(); for (const ref of ['S-ABCD2345', 'S-ABCD2346']) post(c, Object.assign({}, stand, { ref })); post(c, { type: 'repas', nom: 'Jean', email: 'e@x.fr', moyennes: '1', ref: 'R-ABCD2345' });
+  c.creerPaiement({ quoi: 'stand', email: 'e@x.fr', ref: 'S-ABCD2345' }); c.creerPaiement({ quoi: 'stand', email: 'e@x.fr', ref: 'S-ABCD2346' }); c.creerPaiement({ quoi: 'repas', email: 'e@x.fr', ref: 'R-ABCD2345' });
   const tx = c.env.appels.filter(a => /tax_rates$/.test(a.url)).map(a => decode(a.o.payload)); assert.deepStrictEqual(tx.map(x => [x.percentage, x.inclusive]), [['20', 'false'], ['10', 'true']]); });
 
 console.log('E-mails par Resend');
@@ -96,13 +127,13 @@ t('avec RESEND_KEY : ticket + facture envoyés par Resend, depuis l\'adresse du 
   assert.deepStrictEqual(tk.attachments.map(a => a.filename), ['Ticket-repas-R-ABCD2345.pdf', 'Facture-RC-0001.pdf']); assert.ok(tk.attachments.every(a => typeof a.content === 'string' && a.content.length));
   const org = envois.find(e => /paiement reçu/.test(e.subject)); assert.deepStrictEqual(org.to, ['saveyourshoot@gmail.com', 'mathilde.calero@rc-immo.com']); });
 t('Resend refuse : l\'e-mail part quand même par Gmail', () => {
-  const c = charger(resend(422), { RESEND_KEY: 're_FAUX' }); post(c, { type: 'repas', nom: 'Jean', email: 'r@x.fr', moyennes: '1', ref: 'R-ABCD2345' });
+  const c = charger(resend(422), { RESEND_KEY: 're_FAUX' }); post(c, { type: 'repas', nom: 'Jean', email: 'r@x.fr', moyennes: '2', grandes: '1', ref: 'R-ABCD2345' });
   c.verifierSession('cs_test_A'); assert.ok(c.env.mails.some(m => /ticket repas/.test(m.subject))); });
 t('sans RESEND_KEY : Gmail, réponses vers Mathilde', () => { const c = charger(); post(c, stand); assert.ok(c.env.mails.length >= 1); assert.ok(c.env.mails.every(m => m.replyTo === 'mathilde.calero@rc-immo.com')); assert.ok(!c.env.appels.some(a => /resend/.test(a.url))); });
 
 console.log('Codes promo (onglet du Sheet)');
 const avecCodes = (c, lignes) => { const L = c.env.onglets['Codes promo'] = [['Code', 'Réduction', 'Pour', 'Jusqu\'au', 'Max', 'Actif'], ...lignes]; return L; };
-const payerAvec = (c, p) => c.creerPaiement(Object.assign({ quoi: 'stand', cat: 'Artisanat, créations', email: 'e@x.fr', ref: 'S-ABCD2345' }, p));
+const payerAvec = (c, p) => { const ref = p.ref || 'S-ABCD2345'; post(c, Object.assign({}, stand, { categorie: 'Artisanat, créations', ref })); return c.creerPaiement(Object.assign({ quoi: 'stand', email: 'e@x.fr', ref }, p)); };
 const coupons = c => c.env.appels.filter(a => /\/coupons$/.test(a.url)).map(a => decode(a.o.payload));
 t('« noel10 » (10 %) : coupon Stripe créé une fois et appliqué à la session', () => {
   const c = charger(); avecCodes(c, [['NOEL10', '10 %', 'tous', '', '', 'oui']]);
@@ -126,12 +157,31 @@ t('utilisations max atteintes (1 paiement « Payé » avec ce code)', () => {
   assert.strictEqual(payerAvec(c, { code: 'UNEFOIS', ref: 'S-ABCD2399' }).erreur, 'ce code promo a déjà été utilisé le nombre de fois prévu'); });
 t('sans code : aucune réduction', () => { const c = charger(); payerAvec(c, {}); assert.ok(!('discounts[0][coupon]' in decode(sess(c.env).o.payload))); });
 
+t('utilisations max : le code appliqué dans Stripe compte, même absent du formulaire', () => {
+  const c = charger(paye('S-ABCD2345', 19440, { code_promo: 'UNEFOIS' })); avecCodes(c, [['UNEFOIS', '10 %', 'tous', '', '1', 'oui']]);
+  post(c, stand); c.verifierSession('cs_test_A');
+  assert.strictEqual(c.ligne('stand')[c.col('stand', 'code_promo')], 'UNEFOIS');
+  assert.strictEqual(payerAvec(c, { code: 'UNEFOIS', ref: 'S-ABCD2399' }).erreur, 'ce code promo a déjà été utilisé le nombre de fois prévu'); });
+
+console.log('Paiement qui ne correspond pas à la demande');
+t('partenaire : demande Prestige, paiement Étoile de Noël → À VÉRIFIER, pas de bons repas, organisation prévenue une fois', () => {
+  const c = charger(paye('P-ABCD2345', 24000, { offre: 'Étoile de Noël' })); post(c, Object.assign({}, parten, { offre: 'Partenaire Prestige' })); c.env.mails.length = 0;
+  c.verifierSession('cs_test_A'); c.verifierSession('cs_test_A');
+  assert.match(c.ligne('partenaire')[c.col('partenaire', 'paiement')], /^À VÉRIFIER : 240 € payés, offre payée « Étoile de Noël », demandée « Partenaire Prestige »/);
+  assert.deepStrictEqual(c.env.mails.map(m => m.subject), ['Marché de Noël · paiement à vérifier · P-ABCD2345']);
+  assert.strictEqual(c.ligne('partenaire')[c.col('partenaire', 'ticket')], ''); });
+t('stand : catégorie payée différente → À VÉRIFIER', () => { const c = charger(paye('S-ABCD2345', 14400, { categorie: 'Artisanat, créations' })); post(c, stand); c.verifierSession('cs_test_A'); assert.match(c.ligne('stand')[c.col('stand', 'paiement')], /^À VÉRIFIER/); });
+t('2e ligne avec la même référence ajoutée après le paiement : la dernière ne passe pas « Payé »', () => {
+  const c = charger(paye('R-ABCD2345', 4000)); post(c, { type: 'repas', nom: 'Jean', email: 'r@x.fr', moyennes: '2', grandes: '1', ref: 'R-ABCD2345' });
+  post(c, { type: 'repas', nom: 'Jean', email: 'r@x.fr', moyennes: '99', grandes: '99', ref: 'R-ABCD2345' }); c.env.mails.length = 0; c.verifierSession('cs_test_A');
+  const L = c.env.onglets.Repas; assert.match(L[L.length - 1][c.col('repas', 'paiement')], /^À VÉRIFIER/); assert.ok(!c.env.mails.some(m => /ticket/.test(m.subject))); });
+
 console.log('Copie à la secrétaire');
 t('e-mails clients : copie cachée à Mathilde (Gmail et Resend) ; e-mails internes : pas de copie en plus', () => {
   const c = charger(avecFacture('S-ABCD2345', 21600)); post(c, stand); c.verifierSession('cs_test_A');
   const client = c.env.mails.filter(m => m.to === 'e@x.fr'); assert.ok(client.length >= 2); assert.ok(client.every(m => m.bcc === 'mathilde.calero@rc-immo.com'));
   assert.ok(c.env.mails.filter(m => /saveyourshoot/.test(m.to)).every(m => !m.bcc));
-  const r = charger(resend(200), { RESEND_KEY: 're_FAUX' }); post(r, { type: 'repas', nom: 'Jean', email: 'r@x.fr', moyennes: '1', ref: 'R-ABCD2345' }); r.verifierSession('cs_test_A');
+  const r = charger(resend(200), { RESEND_KEY: 're_FAUX' }); post(r, { type: 'repas', nom: 'Jean', email: 'r@x.fr', moyennes: '2', grandes: '1', ref: 'R-ABCD2345' }); r.verifierSession('cs_test_A');
   const tk = r.env.appels.filter(a => /resend/.test(a.url)).map(a => JSON.parse(a.o.payload)).find(e => /ticket/.test(e.subject)); assert.deepStrictEqual(tk.bcc, ['mathilde.calero@rc-immo.com']); });
 
 console.log('Bons repas des partenaires');
@@ -151,4 +201,11 @@ t('accueil : le QR du partenaire donne 6 grandes portions, puis DÉJÀ REMIS', (
   assert.strictEqual(JSON.parse(c.doGet({ parameter: { action: 'retirer', code, pin: '4821' } })).etat, 'remis');
   assert.strictEqual(JSON.parse(c.doGet({ parameter: { action: 'retirer', code, pin: '4821' } })).etat, 'deja'); });
 t('stand payé : pas de bon repas', () => { const c = charger(avecFacture('S-ABCD2345', 21600)); post(c, stand); c.verifierSession('cs_test_A'); assert.ok(!c.env.mails.some(m => /bons repas/.test(m.subject))); });
+
+t('bon partenaire avec une offre inconnue : pas de bon envoyé, scan « À VÉRIFIER », rien de remis', () => {
+  const c = charger(avecFacture('P-ABCD2345', 48000, undefined, { offre: 'Offre renommée' }), { ACCUEIL_CODE: '4821' }); post(c, parten);
+  c.ligne('partenaire')[c.col('partenaire', 'offre')] = 'Offre renommée'; c.verifierSession('cs_test_A');
+  assert.ok(!c.env.mails.some(m => /bons repas/.test(m.subject))); assert.strictEqual(c.ligne('partenaire')[c.col('partenaire', 'ticket')], '');
+  const code = c.codeTicket('P-ABCD2345');
+  assert.strictEqual(JSON.parse(c.doGet({ parameter: { action: 'retirer', code, pin: '4821' } })).etat, 'probleme'); assert.strictEqual(c.ligne('partenaire')[c.col('partenaire', 'retrait')], ''); });
 console.log(`\n${ok} tests réussis` + (process.exitCode ? ' — DES TESTS ÉCHOUENT' : ''));

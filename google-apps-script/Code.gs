@@ -99,6 +99,7 @@ function doGet(e) {
   const action = e && e.parameter && e.parameter.action;
   if (action === 'partenaires') return json({partenaires: partenaires()});
   if (action === 'paiement') return json(creerPaiement(e.parameter));
+  if (action === 'promo') return json(verifierPromo(e.parameter));
   if (action === 'verif') return json(verifierSession(String(e.parameter.session || '')));
   if (action === 'controle') return json(controlerTicket(e.parameter, false));
   if (action === 'retirer') return json(controlerTicket(e.parameter, true));
@@ -370,6 +371,8 @@ function factureDe(s) {
  *     ?action=paiement&quoi=stand&cat=Producteur, terroir&stand=12&email=…&ref=S-XXXXXXXX
  *     ?action=paiement&quoi=partenaire&offre=Sapin Gourmand&email=…&ref=P-XXXXXXXX
  * -> {ok, url} : page de paiement Stripe. Le prix est toujours calculé ici.
+ * Les quantités, la catégorie et l'offre viennent de la ligne du Sheet qui porte cette référence : les paramètres
+ * m, g, type, cat, stand et offre de l'adresse sont ignorés (sinon on pourrait payer 1 repas pour un ticket de 99).
  */
 function creerPaiement(p) {
   try {
@@ -380,6 +383,10 @@ function creerPaiement(p) {
     if (!MAIL_RE.test(email)) return {ok: false, erreur: 'e-mail invalide'};
     const ref = String(p.ref || '');
     if (!REF_RE.test(ref) || ref.charAt(0) !== PREFIXE[quoi]) return {ok: false, erreur: 'référence invalide'};
+    const l = ligneRepas(ref);
+    if (!l) return {ok: false, erreur: 'réservation introuvable'};
+    if (/^Payé/.test(String(l.d.paiement))) return {ok: false, erreur: 'réservation déjà payée'};
+    const r = l.d;
     // Code promo (onglet « Codes promo » du Sheet) : vérifié ici, appliqué par Stripe (visible sur la facture)
     let remise = null;
     const codeP = String(p.code || '').replace(/\s+/g, '').toUpperCase();
@@ -390,24 +397,24 @@ function creerPaiement(p) {
     const lignes = [], meta = {ref: ref, type: quoi, code_promo: codeP};
     let page = quoi;
     if (quoi === 'repas') {
-      const m = parseInt(p.m || '0', 10), g = parseInt(p.g || '0', 10);
+      const m = parseInt(r.moyennes || '0', 10), g = parseInt(r.grandes || '0', 10);
       if (!(m >= 0 && m <= 99 && g >= 0 && g <= 99 && m + g > 0)) return {ok: false, erreur: 'nombre de repas invalide'};
       const c = calculRepas(m, g);
-      const typeOffert = c.offerts > 0 ? (p.type === 'Grande' ? 'grande' : 'moyenne') : '';
+      const typeOffert = c.offerts > 0 ? (String(r.offert_type) === 'Grande' ? 'grande' : 'moyenne') : '';
       const tvaR = [tauxTVA(TVA_REPAS, true)];
       if (m) lignes.push({price_data: {currency: 'eur', unit_amount: PRIX_MOYENNE * 100, product_data: {name: 'Repas · moyenne portion'}}, quantity: m, tax_rates: tvaR});
       if (g) lignes.push({price_data: {currency: 'eur', unit_amount: PRIX_GRANDE * 100, product_data: {name: 'Repas · grande portion'}}, quantity: g, tax_rates: tvaR});
       if (c.offerts > 0) lignes[0].price_data.product_data.description = '+ ' + c.offerts + ' repas offert' + (c.offerts > 1 ? 's' : '') + ' (' + typeOffert + ' portion), remis à l\'accueil';
       Object.assign(meta, {moyennes: m, grandes: g, offerts: c.offerts, type_offert: typeOffert});
     } else if (quoi === 'stand') {
-      const cat = String(p.cat || '');
+      const cat = String(r.categorie || '');
       if (!Object.prototype.hasOwnProperty.call(PRIX_STANDS, cat)) return {ok: false, erreur: 'catégorie de stand invalide'};
-      const n = String(p.stand || '');
+      const n = String(r.stand || '');
       if (n && !/^([1-9]|[12]\d|30)$/.test(n)) return {ok: false, erreur: 'numéro de stand invalide'};
       lignes.push({price_data: {currency: 'eur', unit_amount: PRIX_STANDS[cat] * 100, product_data: {name: 'Stand 3 × 3 m · ' + cat + ' · 18, 19 et 20 décembre', description: (n ? 'Stand n° ' + n + ' souhaité. ' : '') + 'Emplacement confirmé par téléphone par l\'organisation.'}}, quantity: 1, tax_rates: [tauxTVA(TVA, false)]});
       Object.assign(meta, {categorie: cat, stand: n});
     } else {
-      const offre = String(p.offre || '');
+      const offre = String(r.offre || '');
       if (!Object.prototype.hasOwnProperty.call(PRIX_OFFRES, offre)) return {ok: false, erreur: 'offre invalide'};
       lignes.push({price_data: {currency: 'eur', unit_amount: PRIX_OFFRES[offre] * 100, product_data: {name: 'Offre partenaire « ' + offre + ' » · ' + NOM_EVENT + ' 2026'}}, quantity: 1, tax_rates: [tauxTVA(TVA, false)]});
       Object.assign(meta, {offre: offre});
@@ -493,6 +500,8 @@ function verifierPaiements() {
 function paiementRecu(s) {
   const ref = String(s.client_reference_id || '');
   if (!REF_RE.test(ref)) return;
+  const ecart = ecartPaiement(s, ligneRepas(ref));
+  if (ecart) { paiementAVerifier(s, ref, ecart); return; }
   const texte = 'Payé ' + (s.amount_total / 100) + ' € le ' + Utilities.formatDate(new Date(s.created * 1000), 'Europe/Paris', 'dd/MM HH:mm') + (s.livemode ? '' : ' (TEST)');
   const lock = LockService.getScriptLock();
   let nouveau = false;
@@ -500,6 +509,10 @@ function paiementRecu(s) {
     lock.waitLock(10000);
     const avant = marquer(ref, texte, true);
     nouveau = avant !== undefined && !/^Payé/.test(String(avant));
+    // Code promo réellement appliqué par Stripe : noté sur la ligne, pour que « Utilisations max » le compte
+    const code = String((s.metadata && s.metadata.code_promo) || '');
+    const lp = ligneRepas(ref);
+    if (lp && lp.col('code_promo') > 0) lp.sh.getRange(lp.ligne, lp.col('code_promo')).setValue(/^[A-Z0-9_-]{1,30}$/.test(code) ? code : '');
   } finally {
     lock.releaseLock();
   }
@@ -511,6 +524,41 @@ function paiementRecu(s) {
   if (nouveau) { try { mailsPaiement(ref, s.amount_total / 100, !s.livemode, fac); } catch (err) { console.error('mailsPaiement', err); } }
   if (ref.charAt(0) === 'P') envoyerTicketSiBesoin(ref, null);   // partenaire : bon pour ses repas offerts
   envoyerFactureSiBesoin(ref, fac);
+}
+
+/**
+ * Compare la session Stripe (métadonnées écrites par creerPaiement) à la ligne du Sheet.
+ * Renvoie '' si tout correspond, sinon la raison de l'écart.
+ */
+function ecartPaiement(s, l) {
+  if (!l) return '';                                     // référence inconnue : marquer() ne fera rien
+  const meta = s.metadata || {}, d = l.d, ref = String(s.client_reference_id);
+  const quoi = TYPE_DE[ref.charAt(0)];
+  if (String(meta.ref || '') !== ref || String(meta.type || '') !== quoi) return 'session sans les informations de la demande';
+  const n = function (v) { return String(parseInt(v || '0', 10) || 0); };
+  if (quoi === 'repas' && (n(meta.moyennes) !== n(d.moyennes) || n(meta.grandes) !== n(d.grandes)))
+    return 'payé ' + n(meta.moyennes) + ' moyenne(s) + ' + n(meta.grandes) + ' grande(s), demande de ' + n(d.moyennes) + ' + ' + n(d.grandes);
+  if (quoi === 'stand' && String(meta.categorie || '') !== String(d.categorie || '')) return 'catégorie payée « ' + meta.categorie + ' », demandée « ' + d.categorie + ' »';
+  if (quoi === 'partenaire' && String(meta.offre || '') !== String(d.offre || '')) return 'offre payée « ' + meta.offre + ' », demandée « ' + d.offre + ' »';
+  return '';
+}
+
+/** Paiement qui ne correspond pas à la demande : pas de « Payé », pas de ticket ; l'organisation est prévenue une fois. */
+function paiementAVerifier(s, ref, ecart) {
+  const texte = 'À VÉRIFIER : ' + (s.amount_total / 100) + ' € payés, ' + ecart + (s.livemode ? '' : ' (TEST)');
+  const lock = LockService.getScriptLock();
+  let avant;
+  try {
+    lock.waitLock(10000);
+    avant = marquer(ref, texte, false);                  // ne remplace jamais un « Payé »
+  } finally {
+    lock.releaseLock();
+  }
+  if (avant === undefined || /^(Payé|À VÉRIFIER)/.test(String(avant))) return;
+  try {
+    envoyerMail({to: NOTIFIER || Session.getEffectiveUser().getEmail(), subject: NOM_EVENT + ' · paiement à vérifier · ' + ref,
+      body: 'Un paiement de ' + (s.amount_total / 100) + ' € (référence ' + ref + ') ne correspond pas à la demande enregistrée : ' + ecart + '.\n\nAucun ticket n\'a été envoyé. Vérifie la ligne dans le Google Sheet et le paiement dans Stripe avant de faire quoi que ce soit.\n\n' + SpreadsheetApp.getActiveSpreadsheet().getUrl()});
+  } catch (err) { console.error('paiementAVerifier', err); }
 }
 
 /** Note la facture comme envoyée. */
@@ -627,6 +675,21 @@ function codePromo(code, quoi) {
     props.setProperty(cle, id);
   }
   return {ok: true, coupon: id};
+}
+
+/** GET ?action=promo&code=…&quoi=… : vérifie un code avant d'enregistrer la demande (le site reste sur le formulaire s'il est refusé). */
+function verifierPromo(p) {
+  try {
+    if (!quota()) return {ok: false, erreur: 'trop de demandes'};
+    const quoi = PREFIXE[p.quoi] ? p.quoi : 'repas';
+    const code = String(p.code || '').replace(/\s+/g, '').toUpperCase();
+    if (!code) return {ok: true};
+    const r = codePromo(code, quoi);
+    return r.ok ? {ok: true} : {ok: false, promo: true, erreur: r.erreur};
+  } catch (err) {
+    console.error('verifierPromo', err);
+    return {ok: false, erreur: String(err.message || err)};
+  }
 }
 
 /** Nombre de paiements faits avec ce code (lignes « Payé » des onglets Repas, Stands et Partenaires). */
@@ -893,7 +956,8 @@ function qrDataUrl(texte) {
 function envoyerTicket(d, fac) {
   const code = codeTicket(String(d.ref));
   const part = String(d.ref).charAt(0) === 'P';   // partenaire : repas offerts avec son offre (grande portion)
-  const m = part ? 0 : parseInt(d.moyennes || '0', 10), g = part ? (REPAS_OFFRES[d.offre] || 0) : parseInt(d.grandes || '0', 10), off = part ? 0 : parseInt(d.offerts || '0', 10);
+  const m = part ? 0 : parseInt(d.moyennes || '0', 10), g = part ? (REPAS_OFFRES[String(d.offre || '').trim()] || 0) : parseInt(d.grandes || '0', 10), off = part ? 0 : parseInt(d.offerts || '0', 10);
+  if (part && !g) throw new Error('offre partenaire sans nombre de repas : ' + d.offre);   // pas de bon « 0 repas » (colonne Bons repas laissée vide)
   const esc = function (t) { return String(t).replace(/[&<>"']/g, function (c) { return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]; }); };
   let bandeau = '';
   try {
@@ -976,10 +1040,11 @@ function controlerTicket(p, retirer) {
     if (!l) return {ok: true, etat: 'inconnu', ref: ref};
     const part = ref.charAt(0) === 'P';
     const info = part
-      ? {ok: true, ref: ref, nom: String(l.d.entreprise || l.d.nom) + ' (partenaire)', moyennes: 0, grandes: REPAS_OFFRES[l.d.offre] || 0, offerts: 0, type_offert: '', retrait: String(l.d.retrait || '')}
+      ? {ok: true, ref: ref, nom: String(l.d.entreprise || l.d.nom) + ' (partenaire)', moyennes: 0, grandes: REPAS_OFFRES[String(l.d.offre || '').trim()] || 0, offerts: 0, type_offert: '', retrait: String(l.d.retrait || '')}
       : {ok: true, ref: ref, nom: String(l.d.nom), moyennes: parseInt(l.d.moyennes || '0', 10), grandes: parseInt(l.d.grandes || '0', 10), offerts: parseInt(l.d.offerts || '0', 10), type_offert: String(l.d.offert_type || ''), retrait: String(l.d.retrait || '')};
     if (!/^Payé/.test(String(l.d.paiement))) { info.etat = 'nonpaye'; return info; }
     if (info.retrait) { info.etat = 'deja'; return info; }
+    if (part && !info.grandes) { info.etat = 'probleme'; return info; }   // offre partenaire sans nombre de repas reconnu : rien à remettre
     if (!retirer) { info.etat = 'ok'; return info; }
     info.retrait = 'Remis le ' + Utilities.formatDate(new Date(), 'Europe/Paris', 'dd/MM à HH:mm');
     l.sh.getRange(l.ligne, l.col('retrait')).setValue(info.retrait);
