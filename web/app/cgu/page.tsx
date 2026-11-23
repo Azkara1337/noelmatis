@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { pageMeta } from '@/lib/seo';
 import Link from 'next/link';
 import PageLegale, { Champ } from '@/components/Legal';
-import { CONDITIONS, OFFRE_REPAS, ORGANISATEUR, PAIEMENT, PRIX_GRANDE, PRIX_MOYENNE, TELEPHONE } from '@/lib/config';
+import { CONDITIONS, OFFRE_REPAS, ORGANISATEUR, PAIEMENT, PRIX_GRANDE, PRIX_MOYENNE, TELEPHONE, CONTACT_MAIL } from '@/lib/config';
 
 export const metadata: Metadata = pageMeta('/cgu/', 'Conditions générales', 'Conditions générales du site et des réservations (repas, stands, partenariats) du Marché de Noël de Pamiers.');
 
@@ -50,7 +50,7 @@ export default function Cgu() {
 
       <h2>8. Litiges</h2>
       <p>Ces conditions sont soumises au droit français. En cas de difficulté, contactez d'abord l'organisation au {TELEPHONE} : nous cherchons toujours une solution à l'amiable.</p>
-      <p><b>Médiation de la consommation :</b> <Champ v={c.mediateur} /></p>
+      <p><b>Médiation de la consommation :</b> en cas de litige, adressez d’abord une réclamation écrite à l’organisation, par e-mail à {CONTACT_MAIL}. Si elle n’aboutit pas, vous pouvez saisir gratuitement le médiateur de la consommation dont nous relevons, dans un délai d’un an à compter de votre réclamation : <b>CM2C</b>, 49 rue de Ponthieu, 75008 Paris · 01 89 47 00 14 · <a href="https://www.cm2c.net" target="_blank" rel="noopener">www.cm2c.net</a>.</p>
       <p>Vos données personnelles sont traitées comme indiqué sur la page <Link href="/confidentialite/">Données personnelles</Link>.</p>
     </PageLegale>
   );

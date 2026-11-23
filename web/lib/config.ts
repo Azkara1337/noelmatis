@@ -45,10 +45,10 @@ export const CONDITIONS = {
   /** Paiement des offres partenaires (ex. 'Sur facture, à 30 jours'). */
   paiementPartenaire: 'En ligne, par carte bancaire, au moment de la demande (prix affichés HT, payés TTC avec la TVA à 20 %). La facture est envoyée automatiquement par e-mail après le paiement.',
   /** Médiateur de la consommation (nom + site), obligatoire si l'organisateur est un professionnel qui vend aux particuliers. */
-  mediateur: `pour toute réclamation, contactez le secrétariat de l’organisation par e-mail à ${CONTACT_MAIL} ou au ${TELEPHONE}.`,
+  mediateur: 'CM2C, 49 rue de Ponthieu, 75008 Paris · 01 89 47 00 14 · https://www.cm2c.net',
 };
 /** Date de mise à jour des pages légales. */
-export const MAJ_LEGAL = '12 novembre 2026';
+export const MAJ_LEGAL = '23 novembre 2026';
 /** Repas : paiement en ligne par Stripe, créé par le script Google (clé STRIPE_SECRET dans les propriétés du script). false = « paiement en ligne bientôt disponible ». */
 export const PAIEMENT_EN_LIGNE: boolean = true;   // à passer à true après les tests réels avec la clé Stripe
 /** Texte affiché sous le bouton des repas. */
