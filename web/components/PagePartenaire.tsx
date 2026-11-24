@@ -68,7 +68,6 @@ export default function PagePartenaire() {
             bouton={PAIEMENT_EN_LIGNE && PRIX_OFFRES[pack] ? `Payer ${eur(ttc(PRIX_OFFRES[pack]))} TTC · ${pack}` : 'Envoyer ma demande'}
           >
             <h3>Je deviens partenaire du Marché de Noël</h3>
-            <p className="doux" style={{fontSize:'14px'}}>On vous rappelle sous 48 h pour valider votre offre.</p>
             <div className="deux"><label>Entreprise<input id="pa-ent" name="entreprise" autoComplete="organization" /></label><label>Nom<input id="pa-nom" name="nom" autoComplete="name" /></label></div>
             <div className="deux"><label>Téléphone<input id="pa-tel" name="tel" type="tel" inputMode="tel" autoComplete="tel" maxLength={20} placeholder="06 12 34 56 78" /></label><label>E-mail<input id="pa-mail" name="email" type="email" autoComplete="email" /></label></div>
             <label>Salariés à inviter<input id="pa-sal" name="salaries" type="number" min="1" inputMode="numeric" /></label>
