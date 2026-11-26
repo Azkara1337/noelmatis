@@ -58,7 +58,7 @@ export default function PagePartenaire() {
         <div className="duo" style={{marginTop:'56px'}}>
           <Formulaire
             id="contact" type="partenaire"
-            champs={['entreprise', 'nom', 'tel', 'email', 'salaries', 'offre', 'code_promo', 'message', 'ref']}
+            champs={['entreprise', 'nom', 'tel', 'email', 'offre', 'code_promo', 'message', 'ref']}
             requis={PAIEMENT_EN_LIGNE ? ['entreprise', 'nom', 'tel', 'email'] : ['entreprise', 'nom', 'tel']}
             erreur={PAIEMENT_EN_LIGNE ? 'Indiquez l’entreprise, votre nom, votre téléphone et votre e-mail.' : 'Indiquez l’entreprise, votre nom et un téléphone.'}
             titreMerci="Demande prête"
@@ -70,7 +70,6 @@ export default function PagePartenaire() {
             <h3>Je deviens partenaire du Marché de Noël</h3>
             <div className="deux"><label>Entreprise<input id="pa-ent" name="entreprise" autoComplete="organization" /></label><label>Nom<input id="pa-nom" name="nom" autoComplete="name" /></label></div>
             <div className="deux"><label>Téléphone<input id="pa-tel" name="tel" type="tel" inputMode="tel" autoComplete="tel" maxLength={20} placeholder="06 12 34 56 78" /></label><label>E-mail<input id="pa-mail" name="email" type="email" autoComplete="email" /></label></div>
-            <label>Salariés à inviter<input id="pa-sal" name="salaries" type="number" min="1" inputMode="numeric" /></label>
             <label>Offre<select id="pack" name="offre" value={pack} onChange={e => setPack(e.target.value)}><option value="Étoile de Noël">Étoile de Noël · 200 € HT (240 € TTC)</option><option value="Sapin Gourmand">Sapin Gourmand · 400 € HT (480 € TTC)</option><option value="Maison du Père Noël">Maison du Père Noël · 1 200 € HT (1 440 € TTC)</option><option value="Partenaire Prestige">Partenaire Prestige · 2 500 € HT (3 000 € TTC)</option><option>Je ne sais pas encore</option></select></label>
             <label><span>Code promo <small className="facultatif">(facultatif)</small></span><input name="code_promo" autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={30} placeholder="Ex. NOEL2026" /><small className="promo-aide">Codes promo disponibles auprès de <a href="/invites/" target="_blank" rel="noopener">nos créateurs invités</a> : suivez-les sur leurs réseaux !</small></label>
             <input type="hidden" name="ref" value={ref} />

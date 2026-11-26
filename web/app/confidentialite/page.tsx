@@ -17,7 +17,7 @@ export default function Confidentialite() {
       <ul>
         <li><b>Demande de stand :</b> nom, activité, téléphone, e-mail, stand souhaité, catégorie, message. Pour vous rappeler, confirmer votre emplacement et organiser votre venue.</li>
         <li><b>Réservation de repas :</b> nom, e-mail, téléphone, profil (particulier ou entreprise), nombre de repas. Pour préparer vos tickets et, si besoin, votre facture.</li>
-        <li><b>Demande de partenariat :</b> entreprise, nom, téléphone, e-mail, nombre de salariés, offre choisie, message. Pour vous rappeler et établir votre offre.</li>
+        <li><b>Demande de partenariat :</b> entreprise, nom, téléphone, e-mail, offre choisie, message. Pour vous rappeler et établir votre offre.</li>
       </ul>
       <p>Ces traitements sont nécessaires pour répondre à votre demande et exécuter la réservation (article 6.1.b du RGPD). Les champs obligatoires sont signalés dans chaque formulaire : sans eux, nous ne pouvons pas traiter la demande.</p>
       <p>Vos données ne sont ni vendues, ni louées, ni utilisées pour de la publicité.</p>
